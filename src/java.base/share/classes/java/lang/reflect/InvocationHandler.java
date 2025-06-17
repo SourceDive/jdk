@@ -47,12 +47,14 @@ public interface InvocationHandler {
      * associated with.
      *
      * @param   proxy the proxy instance that the method was invoked on
+     *                <p>当前代理对象</p>
      *
      * @param   method the {@code Method} instance corresponding to
      * the interface method invoked on the proxy instance.  The declaring
      * class of the {@code Method} object will be the interface that
      * the method was declared in, which may be a superinterface of the
      * proxy interface that the proxy class inherits the method through.
+     *                 <p>代理对象的方法</p>
      *
      * @param   args an array of objects containing the values of the
      * arguments passed in the method invocation on the proxy instance,
