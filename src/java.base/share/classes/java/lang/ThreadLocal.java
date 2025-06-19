@@ -150,6 +150,7 @@ public class ThreadLocal<T> {
     public ThreadLocal() {
     }
 
+    // threadlocal 和当前线程挂钩，因为这里是直接操作了 Thread.currentThread() 了
     /**
      * Returns the value in the current thread's copy of this
      * thread-local variable.  If the variable has no value for the
