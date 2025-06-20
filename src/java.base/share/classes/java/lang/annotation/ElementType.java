@@ -71,6 +71,8 @@ package java.lang.annotation;
  * @jls 4.1 The Kinds of Types and Values
  */
 public enum ElementType {
+    // type 语义范围更广：包括类(class)、接口(interface)、枚举类(enum)、注解类(@interface)
+    // 那这也相当于一个抽象了
     /** Class, interface (including annotation type), or enum declaration */
     TYPE,
 
