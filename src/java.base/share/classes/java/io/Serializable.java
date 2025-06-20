@@ -25,6 +25,7 @@
 
 package java.io;
 
+// 标记接口
 /**
  * Serializability of a class is enabled by the class implementing the
  * java.io.Serializable interface.

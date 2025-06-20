@@ -25,6 +25,7 @@
 
 package java.lang;
 
+// 标记接口
 /**
  * A class implements the <code>Cloneable</code> interface to
  * indicate to the {@link java.lang.Object#clone()} method that it

@@ -39,6 +39,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 
 /**
+ * <p>单例的，全局唯一的实例</p>
  * Every Java application has a single instance of class
  * {@code Runtime} that allows the application to interface with
  * the environment in which the application is running. The current
