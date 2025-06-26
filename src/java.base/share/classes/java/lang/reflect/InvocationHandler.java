@@ -41,6 +41,7 @@ package java.lang.reflect;
 public interface InvocationHandler {
 
     /**
+     * <p>在代理对象上的方法调用。</p>
      * Processes a method invocation on a proxy instance and returns
      * the result.  This method will be invoked on an invocation handler
      * when a method is invoked on a proxy instance that it is
