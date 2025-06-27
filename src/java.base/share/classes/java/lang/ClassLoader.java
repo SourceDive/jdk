@@ -567,13 +567,17 @@ public abstract class ClassLoader {
     {
         synchronized (getClassLoadingLock(name)) {
             // First, check if the class has already been loaded
+            // 检查类是否已被加载。
             Class<?> c = findLoadedClass(name);
             if (c == null) {
                 long t0 = System.nanoTime();
                 try {
+                    // 父加载器存在，直接先给父加载器
+                    // 无条件向上委派
                     if (parent != null) {
                         c = parent.loadClass(name, false);
                     } else {
+                        // 直接交给 bootstrap class loader
                         c = findBootstrapClassOrNull(name);
                     }
                 } catch (ClassNotFoundException e) {
@@ -696,6 +700,7 @@ public abstract class ClassLoader {
     }
 
     /**
+     * <p>这个方法交给子类去实现</p>
      * Finds the class with the specified <a href="#binary-name">binary name</a>.
      * This method should be overridden by class loader implementations that
      * follow the delegation model for loading classes, and will be invoked by
@@ -1261,6 +1266,7 @@ public abstract class ClassLoader {
     private native Class<?> findBootstrapClass(String name);
 
     /**
+     * <p>检查类是否已被加载。</p>
      * Returns the class with the given <a href="#binary-name">binary name</a> if this
      * loader has been recorded by the Java virtual machine as an initiating
      * loader of a class with that <a href="#binary-name">binary name</a>.  Otherwise
