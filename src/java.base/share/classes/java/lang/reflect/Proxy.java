@@ -470,6 +470,7 @@ public class Proxy implements java.io.Serializable {
         private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
         // prefix for all proxy class names
+        // 这个就是jdk代理对象的前缀
         private static final String proxyClassNamePrefix = "$Proxy";
 
         // next number to use for generation of unique proxy class names
@@ -895,6 +896,7 @@ public class Proxy implements java.io.Serializable {
     }
 
     /**
+     * <p>生成代理对象</p>
      * Returns a proxy instance for the specified interfaces
      * that dispatches method invocations to the specified invocation
      * handler.
