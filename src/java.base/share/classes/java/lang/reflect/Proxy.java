@@ -72,6 +72,7 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  * list of interfaces, known as <em>proxy interfaces</em>. A <em>proxy instance</em>
  * is an instance of a proxy class.
  *
+ * <p>每一个代理对象实例都有一个关联的 invocation handler对象</p>
  * Each proxy instance has an associated <i>invocation handler</i>
  * object, which implements the interface {@link InvocationHandler}.
  * A method invocation on a proxy instance through one of its proxy
