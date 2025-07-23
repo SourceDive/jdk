@@ -619,7 +619,7 @@ public interface List<E> extends Collection<E> {
      * list.
      *
      * @param index the index of the element to be removed
-     * @return the element previously at the specified position
+     * @return the element previously at the specified position。会返回被移除的元素。
      * @throws UnsupportedOperationException if the {@code remove} operation
      *         is not supported by this list
      * @throws IndexOutOfBoundsException if the index is out of range

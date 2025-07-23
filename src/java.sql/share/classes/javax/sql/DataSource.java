@@ -32,6 +32,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Wrapper;
 
 /**
+ * <p>物理连接的抽象工厂。离物理连接最近的直接上层抽象。</p>
  * <p>A factory for connections to the physical data source that this
  * {@code DataSource} object represents.  An alternative to the
  * {@code DriverManager} facility, a {@code DataSource} object
