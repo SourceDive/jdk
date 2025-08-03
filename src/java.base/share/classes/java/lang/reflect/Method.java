@@ -214,6 +214,7 @@ public final class Method extends Executable {
     }
 
     /**
+     * <p>返回声明方法的类和接口。</p>
      * Returns the {@code Class} object representing the class or interface
      * that declares the method represented by this object.
      */
