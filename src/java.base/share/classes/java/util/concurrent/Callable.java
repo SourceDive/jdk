@@ -36,6 +36,7 @@
 package java.util.concurrent;
 
 /**
+ * <p>函数式接口</p>
  * A task that returns a result and may throw an exception.
  * Implementors define a single method with no arguments called
  * {@code call}.
