@@ -28,6 +28,7 @@ package java.lang;
 import java.lang.annotation.*;
 
 /**
+ * <p>函数式接口。</p>
  * An informative annotation type used to indicate that an interface
  * type declaration is intended to be a <i>functional interface</i> as
  * defined by the Java Language Specification.
