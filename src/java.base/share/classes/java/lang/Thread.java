@@ -46,12 +46,14 @@ import sun.security.util.SecurityConstants;
 import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
+ * <p>JVM允许应用同时运行多个线程。</p>
+ * <p>线程优先级：[1, 10]</p>
  * A <i>thread</i> is a thread of execution in a program. The Java
  * Virtual Machine allows an application to have multiple threads of
  * execution running concurrently.
  * <p>
  * Every thread has a priority. Threads with higher priority are
- * executed in preference to threads with lower priority. Each thread
+ * executed in preference to threads with lower priority(高优先级线程优先于低优先级线程执行). Each thread
  * may or may not also be marked as a daemon. When code running in
  * some thread creates a new {@code Thread} object, the new
  * thread has its priority initially set equal to the priority of the
