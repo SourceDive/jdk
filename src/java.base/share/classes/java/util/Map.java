@@ -245,6 +245,7 @@ public interface Map<K, V> {
     // Modification Operations
 
     /**
+     * <p>如果key当前对应的有值(旧值)，则会把这个旧值给返回回去。</p>
      * Associates the specified value with the specified key in this map
      * (optional operation).  If the map previously contained a mapping for
      * the key, the old value is replaced by the specified value.  (A map
