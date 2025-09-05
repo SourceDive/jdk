@@ -88,6 +88,7 @@ import sun.reflect.annotation.*;
 import sun.reflect.misc.ReflectUtil;
 
 /**
+ * <p>注意，这里的 class 是 Type接口的实现。</p>
  * Instances of the class {@code Class} represent classes and interfaces
  * in a running Java application. An enum type is a kind of class and an
  * annotation type is a kind of interface. Every array also
