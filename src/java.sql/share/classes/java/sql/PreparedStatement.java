@@ -31,6 +31,7 @@ import java.io.Reader;
 import java.io.InputStream;
 
 /**
+ * <p>预编译语句。</p>
  * An object that represents a precompiled SQL statement.
  * <P>A SQL statement is precompiled and stored in a
  * <code>PreparedStatement</code> object. This object can then be used to

@@ -31,6 +31,7 @@ import java.io.Reader;
 import java.io.InputStream;
 
 /**
+ * <p>可调用语句 (用于执行存储过程)。</p>
  * The interface used to execute SQL stored procedures.  The JDBC API
  * provides a stored procedure SQL escape syntax that allows stored procedures
  * to be called in a standard way for all RDBMSs. This escape syntax has one

@@ -29,6 +29,8 @@ import java.util.regex.Pattern;
 import static java.util.stream.Collectors.joining;
 
 /**
+ * <p>SQL语句。</p>
+ * <p>一个用来执行 SQL 语句的工具对象。</p>
  * <P>The object used for executing a static SQL statement
  * and returning the results it produces.
  * <P>
