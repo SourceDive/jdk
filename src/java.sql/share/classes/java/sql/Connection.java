@@ -85,6 +85,7 @@ import java.util.concurrent.Executor;
 public interface Connection  extends Wrapper, AutoCloseable {
 
     /**
+     * <p>创建 Statement 对象，这个对象用来将sql语句发送给数据库。</p>
      * Creates a <code>Statement</code> object for sending
      * SQL statements to the database.
      * SQL statements without parameters are normally

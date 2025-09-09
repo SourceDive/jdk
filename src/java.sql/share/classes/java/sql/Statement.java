@@ -326,6 +326,7 @@ public interface Statement extends Wrapper, AutoCloseable {
     //----------------------- Multiple Results --------------------------
 
     /**
+     * <p>执行给定的sql语句。</p>
      * Executes the given SQL statement, which may return multiple results.
      * In some (uncommon) situations, a single SQL statement may return
      * multiple result sets and/or update counts.  Normally you can ignore
