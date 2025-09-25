@@ -296,6 +296,7 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
+     * <p>根据类名加载类。</p>
      * Returns the {@code Class} object associated with the class or
      * interface with the given string name.  Invoking this method is
      * equivalent to:
