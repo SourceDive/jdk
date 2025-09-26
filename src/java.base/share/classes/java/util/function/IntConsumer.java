@@ -27,6 +27,8 @@ package java.util.function;
 import java.util.Objects;
 
 /**
+ * <p>输入：int</p>
+ * <p>输出：void</p>
  * Represents an operation that accepts a single {@code int}-valued argument and
  * returns no result.  This is the primitive type specialization of
  * {@link Consumer} for {@code int}.  Unlike most other functional interfaces,

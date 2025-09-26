@@ -25,6 +25,8 @@
 package java.util.function;
 
 /**
+ * <p>输入：void</p>
+ * <p>输出：double</p>
  * Represents a supplier of {@code double}-valued results.  This is the
  * {@code double}-producing primitive specialization of {@link Supplier}.
  *

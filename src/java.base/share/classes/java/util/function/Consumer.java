@@ -42,6 +42,7 @@ import java.util.Objects;
 public interface Consumer<T> {
 
     /**
+     * <p>接受一个值。</p>
      * Performs this operation on the given argument.
      *
      * @param t the input argument

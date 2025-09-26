@@ -41,6 +41,7 @@ import java.util.Objects;
 public interface Function<T, R> {
 
     /**
+     * <p>对给定的参数应用函数。</p>
      * Applies this function to the given argument.
      *
      * @param t the function argument

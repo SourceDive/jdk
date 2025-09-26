@@ -25,6 +25,8 @@
 package java.util.function;
 
 /**
+ * <p>输入: int</p>
+ * <p>输出: Integer</p>
  * Represents a function that accepts an int-valued argument and produces a
  * result.  This is the {@code int}-consuming primitive specialization for
  * {@link Function}.
