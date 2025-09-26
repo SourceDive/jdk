@@ -41,6 +41,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
+ * <p>一个只读接口。</p>
  * A stage of a possibly asynchronous computation, that performs an
  * action or computes a value when another CompletionStage completes.
  * A stage completes upon termination of its computation, but this may
