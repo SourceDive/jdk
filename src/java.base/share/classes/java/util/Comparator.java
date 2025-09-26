@@ -33,6 +33,8 @@ import java.util.function.ToDoubleFunction;
 import java.util.Comparators;
 
 /**
+ * <p>输入：T</p>
+ * <p>输出：int</p>
  * A comparison function, which imposes a <i>total ordering</i> on some
  * collection of objects.  Comparators can be passed to a sort method (such
  * as {@link Collections#sort(List,Comparator) Collections.sort} or {@link
