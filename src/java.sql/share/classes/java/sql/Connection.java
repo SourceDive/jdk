@@ -187,6 +187,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
     String nativeSQL(String sql) throws SQLException;
 
     /**
+     * <p>autoCommit属性决定什么时候结束一个事务。</p>
      * Sets this connection's auto-commit mode to the given state.
      * If a connection is in auto-commit mode, then all its SQL
      * statements will be executed and committed as individual

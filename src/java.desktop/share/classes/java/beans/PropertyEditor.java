@@ -26,6 +26,7 @@
 package java.beans;
 
 /**
+ * <p>属性编辑器。</p>
  * A PropertyEditor class provides support for GUIs that want to
  * allow users to edit a property value of a given type.
  * <p>
