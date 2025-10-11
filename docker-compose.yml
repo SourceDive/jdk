@@ -40,6 +40,14 @@ services:
         echo '配置完成，现在设置UTF-8编码支持...' &&
         export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8 &&
         export _JAVA_OPTIONS=-Dfile.encoding=UTF-8 &&
+        echo '创建javac包装脚本...' &&
+        cat > /usr/local/bin/javac << 'EOF'
+#!/bin/bash
+export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8
+export _JAVA_OPTIONS=-Dfile.encoding=UTF-8
+exec /usr/lib/jvm/java-11-openjdk-arm64/bin/javac -encoding UTF-8 "$@"
+EOF
+        chmod +x /usr/local/bin/javac &&
         echo '应用UTF-8编码配置到编译系统...' &&
         find build/ -name "*.gmk" -type f -exec sed -i 's/-encoding ascii/-encoding UTF-8/g' {} + 2>/dev/null || true &&
         find build/ -name "*.gmk" -type f -exec sed -i 's/encoding ascii/encoding UTF-8/g' {} + 2>/dev/null || true &&
