@@ -44,12 +44,10 @@ services:
         find build/ -name "*.gmk" -type f -exec sed -i 's/javac -encoding ascii/javac -encoding UTF-8/g' {} + 2>/dev/null || true &&
         find build/ -name "*.gmk" -type f -exec sed -i 's/javac.*-encoding ascii/javac -encoding UTF-8/g' {} + 2>/dev/null || true &&
         echo '创建javac包装脚本强制UTF-8编码...' &&
-        cat > /usr/local/bin/javac-utf8 << '"'"'EOF'"'"'
-#!/bin/bash
-export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8
-export _JAVA_OPTIONS=-Dfile.encoding=UTF-8
-exec javac -encoding UTF-8 "$@"
-EOF
+        echo '#!/bin/bash' > /usr/local/bin/javac-utf8 &&
+        echo 'export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8' >> /usr/local/bin/javac-utf8 &&
+        echo 'export _JAVA_OPTIONS=-Dfile.encoding=UTF-8' >> /usr/local/bin/javac-utf8 &&
+        echo 'exec javac -encoding UTF-8 "$$@"' >> /usr/local/bin/javac-utf8 &&
         chmod +x /usr/local/bin/javac-utf8 &&
         echo '替换编译系统中的javac调用...' &&
         find build/ -name "*.gmk" -type f -exec sed -i 's|javac |/usr/local/bin/javac-utf8 |g' {} + 2>/dev/null || true &&
