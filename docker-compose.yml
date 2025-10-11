@@ -19,6 +19,8 @@ services:
       - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64
       - LANG=C.UTF-8
       - LC_ALL=C.UTF-8
+      - JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8
+      - _JAVA_OPTIONS=-Dfile.encoding=UTF-8
     working_dir: /jdk
     stdin_open: true
     tty: true
@@ -36,6 +38,8 @@ services:
         bash configure --with-boot-jdk=$$JAVA_HOME --with-debug-level=slowdebug --disable-warnings-as-errors &&
         echo '应用UTF-8编码配置到编译系统...' &&
         find build/ -name '*.gmk' -type f -exec sed -i 's/-encoding ascii/-encoding UTF-8/g' {} \; 2>/dev/null || true &&
+        find build/ -name '*.gmk' -type f -exec sed -i 's/encoding ascii/encoding UTF-8/g' {} \; 2>/dev/null || true &&
+        find build/ -name '*.gmk' -type f -exec sed -i 's/ASCII/UTF-8/g' {} \; 2>/dev/null || true &&
         echo '编译环境配置完成！' &&
         echo '' &&
         echo '可用命令:' &&
