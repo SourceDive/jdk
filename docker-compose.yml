@@ -29,7 +29,7 @@ services:
         export LANG=C.UTF-8 &&
         export LC_ALL=C.UTF-8 &&
         echo '配置编译环境...' &&
-        bash configure --with-boot-jdk=$$JAVA_HOME --with-debug-level=slowdebug --disable-warnings-as-errors &&
+        bash configure --with-boot-jdk=$$JAVA_HOME --with-debug-level=slowdebug --disable-warnings-as-errors --with-extra-cflags="-finput-charset=UTF-8" --with-extra-cxxflags="-finput-charset=UTF-8" &&
         echo '应用UTF-8编码配置到编译系统...' &&
         find build/ -name '*.gmk' -type f -exec sed -i 's/-encoding ascii/-encoding UTF-8/g' {} + 2>/dev/null || true &&
         find build/ -name '*.gmk' -type f -exec sed -i 's/encoding ascii/encoding UTF-8/g' {} + 2>/dev/null || true &&
