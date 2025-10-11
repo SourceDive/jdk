@@ -53,7 +53,6 @@ services:
         find build/ -name "*.gmk" -type f -exec sed -i 's|javac |/usr/local/bin/javac-utf8 |g' {} + 2>/dev/null || true &&
         echo '设置PATH环境变量优先使用UTF-8 javac...' &&
         export PATH="/usr/local/bin:$PATH" &&
-        echo 'export PATH="/usr/local/bin:\$PATH"' >> ~/.bashrc &&
         echo '编译环境配置完成！' &&
         echo '' &&
         echo '可用命令:' &&
