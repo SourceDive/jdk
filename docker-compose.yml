@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  jdk-builder:
+    image: jdk12-builder:latest
+    container_name: jdk12-builder
+    volumes:
+      # 挂载源码目录（双向同步，支持源码阅读和注释）
+      - .:/jdk
+      # 挂载编译输出目录（持久化编译结果）
+      - ./build:/jdk/build
+      # 挂载编译好的JDK到本地（方便使用）
+      - ./docker_compiled_jdk:/jdk/compiled
+      # 挂载Maven本地仓库（如果使用Maven）
+      - ~/.m2:/root/.m2
+      # 挂载Gradle缓存（如果使用Gradle）
+      - ~/.gradle:/root/.gradle
+    environment:
+      - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64
+      - LANG=C.UTF-8
+      - LC_ALL=C.UTF-8
+    working_dir: /jdk
+    stdin_open: true
+    tty: true
+    command: >
+      bash -c "
+        echo '=== JDK 12 源码阅读环境 ===' &&
+        echo '设置UTF-8编码环境...' &&
+        export LANG=C.UTF-8 &&
+        export LC_ALL=C.UTF-8 &&
+        echo '配置编译环境...' &&
+        bash configure --with-boot-jdk=$$JAVA_HOME --with-debug-level=slowdebug --disable-warnings-as-errors &&
+        echo '编译环境配置完成！' &&
+        echo '' &&
+        echo '可用命令:' &&
+        echo '  make images          - 编译JDK' &&
+        echo '  make clean           - 清理编译结果' &&
+        echo '  make test            - 运行测试' &&
+        echo '  make hotspot         - 只编译HotSpot VM' &&
+        echo '' &&
+        echo '源码位置: /jdk/src/' &&
+        echo '编译结果: /jdk/build/linux-aarch64-server-slowdebug/images/jdk' &&
+        echo '' &&
+        echo '开始交互式环境...' &&
+        bash
+      "
+
