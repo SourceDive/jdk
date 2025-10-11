@@ -45,8 +45,8 @@ services:
         find build/ -name "*.gmk" -type f -exec sed -i 's/encoding ascii/encoding UTF-8/g' {} + 2>/dev/null || true &&
         find build/ -name "*.gmk" -type f -exec sed -i 's/ASCII/UTF-8/g' {} + 2>/dev/null || true &&
         echo '创建全局javac别名强制UTF-8编码...' &&
-        echo 'alias javac="javac -encoding UTF-8"' >> ~/.bashrc &&
-        echo 'alias javac="javac -encoding UTF-8"' >> /etc/bash.bashrc &&
+        echo "alias javac='javac -encoding UTF-8'" >> ~/.bashrc &&
+        echo "alias javac='javac -encoding UTF-8'" >> /etc/bash.bashrc &&
         echo '编译环境配置完成！' &&
         echo '' &&
         echo '可用命令:' &&
