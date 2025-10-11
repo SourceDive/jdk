@@ -26,6 +26,8 @@
 package java.lang;
 
 /**
+ * <p>可以运行的。</p>
+ * <p>无返回值。</p>
  * <p>Runnable 也是一个函数式接口。</p>
  * The <code>Runnable</code> interface should be implemented by any
  * class whose instances are intended to be executed by a thread. The

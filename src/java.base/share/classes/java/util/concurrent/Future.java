@@ -36,6 +36,7 @@
 package java.util.concurrent;
 
 /**
+ * <p>表示异步计算结果。</p>
  * A {@code Future} represents the result of an asynchronous
  * computation.  Methods are provided to check if the computation is
  * complete, to wait for its completion, and to retrieve the result of
@@ -88,6 +89,7 @@ package java.util.concurrent;
 public interface Future<V> {
 
     /**
+     * <p>取消任务。</p>
      * Attempts to cancel execution of this task.  This attempt will
      * fail if the task has already completed, has already been cancelled,
      * or could not be cancelled for some other reason. If successful,
@@ -111,6 +113,7 @@ public interface Future<V> {
     boolean cancel(boolean mayInterruptIfRunning);
 
     /**
+     * <p>任务是否取消。</p>
      * Returns {@code true} if this task was cancelled before it completed
      * normally.
      *
@@ -119,6 +122,7 @@ public interface Future<V> {
     boolean isCancelled();
 
     /**
+     * <p>任务是否完成。</p>
      * Returns {@code true} if this task completed.
      *
      * Completion may be due to normal termination, an exception, or
@@ -130,6 +134,7 @@ public interface Future<V> {
     boolean isDone();
 
     /**
+     * <p>等待，一直到计算完毕。</p>
      * Waits if necessary for the computation to complete, and then
      * retrieves its result.
      *

@@ -36,6 +36,8 @@
 package java.util.concurrent;
 
 /**
+ * <p>可以调用的。</p>
+ * <p>可以返回结果及抛出异常的任务接口。</p>
  * <p>函数式接口</p>
  * A task that returns a result and may throw an exception.
  * Implementors define a single method with no arguments called
