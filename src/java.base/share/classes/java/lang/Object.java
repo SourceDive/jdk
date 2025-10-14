@@ -305,6 +305,7 @@ public class Object {
     public final native void notifyAll();
 
     /**
+     * <p>阻塞当前线程。</p>
      * Causes the current thread to wait until it is awakened, typically
      * by being <em>notified</em> or <em>interrupted</em>.
      * <p>

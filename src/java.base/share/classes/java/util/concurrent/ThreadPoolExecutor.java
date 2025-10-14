@@ -672,6 +672,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
 
     /**
+     * <p>推进运行状态。</p>
      * Transitions runState to given target, or leaves it alone if
      * already at least the given target.
      *
