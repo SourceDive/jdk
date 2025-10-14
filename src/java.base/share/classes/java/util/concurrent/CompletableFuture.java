@@ -1987,6 +1987,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * <p>在异步任务完成之后返回值。</p>
      * Returns a new CompletableFuture that is asynchronously completed
      * by a task running in the given executor with the value obtained
      * by calling the given Supplier.
