@@ -315,6 +315,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>将给定元素插入队尾。</p>
+     * <p>如果队尾已满，调用线程会一直等待。</p>
      * Inserts the specified element at the tail of this queue, waiting if
      * necessary for space to become available.
      *
@@ -422,6 +424,12 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         return true;
     }
 
+    /**
+     * 1、从对头取出并且移除元素。
+     * 2、队内为空，调用线程阻塞，一直到有元素可用。
+     * @return
+     * @throws InterruptedException
+     */
     public E take() throws InterruptedException {
         final E x;
         final int c;
@@ -430,7 +438,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         takeLock.lockInterruptibly();
         try {
             while (count.get() == 0) {
-                notEmpty.await();
+                notEmpty.await(); // 队列为空，线程一直等待。
             }
             x = dequeue();
             c = count.getAndDecrement();
