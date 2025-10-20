@@ -1747,6 +1747,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>线程状态枚举常量。</p>
      * A thread state.  A thread can be in one of the following states:
      * <ul>
      * <li>{@link #NEW}<br>

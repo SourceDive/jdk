@@ -50,6 +50,7 @@ import java.util.TreeMap;
 
 
 /**
+ * <p>字符集。</p>
  * A named mapping between sequences of sixteen-bit Unicode <a
  * href="../../lang/Character.html#unicode">code units</a> and sequences of
  * bytes.  This class defines methods for creating decoders and encoders and
