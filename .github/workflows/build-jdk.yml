@@ -56,6 +56,15 @@ jobs:
       - name: 配置构建
         run: |
           bash configure --with-debug-level=release --disable-warnings-as-errors
+          
+      - name: 预创建vardeps目录
+        run: |
+          CONF_DIR=$(ls -d build/linux-x86_64-* 2>/dev/null | head -1)
+          if [ -n "$CONF_DIR" ]; then
+            mkdir -p "$CONF_DIR/buildtools/langtools_tools_classes"
+            mkdir -p "$CONF_DIR/make-support/vardeps/make/ModuleWrapper.gmk/java.base"
+            echo "创建了vardeps目录结构"
+          fi
       
       - name: 显示配置信息
         run: |
