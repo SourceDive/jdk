@@ -39,8 +39,9 @@ import java.util.Collection;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
+ * <p>信号量。</p>
  * A counting semaphore.  Conceptually, a semaphore maintains a set of
- * permits.  Each {@link #acquire} blocks if necessary until a permit is
+ * permits(许可).  Each {@link #acquire} blocks if necessary until a permit is
  * available, and then takes it.  Each {@link #release} adds a permit,
  * potentially releasing a blocking acquirer.
  * However, no actual permit objects are used; the {@code Semaphore} just
@@ -342,6 +343,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>获取一个许可。</p>
      * Acquires a permit from this semaphore, only if one is available at the
      * time of invocation.
      *
@@ -370,6 +372,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>获取一个许可。有超时时间。</p>
      * Acquires a permit from this semaphore, if one becomes available
      * within the given waiting time and the current thread has not
      * been {@linkplain Thread#interrupt interrupted}.
@@ -505,6 +508,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>获取给定数目的许可。</p>
      * Acquires the given number of permits from this semaphore, only
      * if all are available at the time of invocation.
      *
@@ -537,6 +541,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>获取给定数目的许可。有超时时间。</p>
      * Acquires the given number of permits from this semaphore, if all
      * become available within the given waiting time and the current
      * thread has not been {@linkplain Thread#interrupt interrupted}.

@@ -135,6 +135,7 @@ public final class String
                Constable, ConstantDesc {
 
     /**
+     * <p>存放字符数据。</p>
      * The value is used for character storage.
      *
      * @implNote This field is trusted by the VM, and is a subject to
