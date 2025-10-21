@@ -84,6 +84,7 @@ jobs:
           make --version | head -1
       
       - name: 配置构建
+        if: steps.cache-build.outputs.cache-hit != 'true'
         run: |
           bash configure \
             --with-debug-level=release \
@@ -99,7 +100,11 @@ jobs:
       - name: 显示配置信息
         run: |
           if [ -f build/*/spec.gmk ]; then
-            echo "✅ 配置成功完成"
+            if [ "${{ steps.cache-build.outputs.cache-hit }}" == "true" ]; then
+              echo "✅ 使用缓存的配置"
+            else
+              echo "✅ 配置成功完成"
+            fi
             cat build/*/spec.gmk | grep -E "CONF_NAME|JDK_VERSION|BOOT_JDK"
           else
             echo "❌ 配置失败"
