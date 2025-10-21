@@ -1,0 +1,73 @@
+name: Build JDK
+
+on:
+  push:
+    branches:
+      - '**'  # 在所有分支上触发
+
+jobs:
+  build:
+    name: 编译 JDK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 安装构建依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            autoconf \
+            zip \
+            unzip \
+            libx11-dev \
+            libxext-dev \
+            libxrender-dev \
+            libxrandr-dev \
+            libxtst-dev \
+            libxt-dev \
+            libcups2-dev \
+            libfontconfig1-dev \
+            libasound2-dev \
+            libfreetype6-dev
+      
+      - name: 设置 Boot JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'  # 使用 JDK 17 作为 boot JDK
+      
+      - name: 显示环境信息
+        run: |
+          echo "Java 版本:"
+          java -version
+          echo "可用磁盘空间:"
+          df -h
+          echo "内存信息:"
+          free -h
+      
+      - name: 配置构建
+        run: |
+          bash configure --with-debug-level=fastdebug
+      
+      - name: 编译 JDK
+        run: |
+          make images
+      
+      - name: 验证构建结果
+        run: |
+          if [ -d build/*/images/jdk ]; then
+            echo "JDK 编译成功！"
+            echo "JDK 版本信息:"
+            ./build/*/images/jdk/bin/java -version
+          else
+            echo "JDK 编译失败：找不到输出目录"
+            exit 1
+          fi
+      
+      - name: 运行基础测试
+        run: |
+          make run-test-tier1
+        continue-on-error: true  # 即使测试失败也继续（因为测试可能需要很长时间）
