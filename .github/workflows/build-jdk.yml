@@ -117,7 +117,12 @@ jobs:
           START_TIME=$(date +%s)
           
           # 执行编译（make会自动检测已有产物并增量编译）
-          make images JAVAC_FLAGS="-encoding UTF-8"
+          if [ "${{ steps.cache-build.outputs.cache-hit }}" == "true" ]; then
+            echo "使用缓存，跳过配置检查"
+            make images JAVAC_FLAGS="-encoding UTF-8" CONF_CHECK=ignore
+          else
+            make images JAVAC_FLAGS="-encoding UTF-8"
+          fi
           
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
