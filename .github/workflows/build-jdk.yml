@@ -1,0 +1,90 @@
+name: Build JDK
+
+on:
+  push:
+    branches:
+      - '**'  # 在所有分支上触发
+
+jobs:
+  build:
+    name: 编译 JDK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 安装构建依赖
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            autoconf \
+            zip \
+            unzip \
+            file \
+            libx11-dev \
+            libxext-dev \
+            libxrender-dev \
+            libxrandr-dev \
+            libxtst-dev \
+            libxt-dev \
+            libcups2-dev \
+            libfontconfig1-dev \
+            libasound2-dev \
+            libfreetype6-dev
+      
+      - name: 设置 Boot JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'  # JDK 12 源码需要 JDK 11 或 12 作为 boot JDK
+      
+      - name: 显示环境信息
+        run: |
+          echo "Java 版本:"
+          java -version
+          echo "可用磁盘空间:"
+          df -h
+          echo "内存信息:"
+          free -h
+      
+      - name: 配置构建
+        run: |
+          bash configure --with-debug-level=fastdebug --disable-warnings-as-errors
+        env:
+          JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/11*/x64
+      
+      - name: 显示配置信息
+        run: |
+          if [ -f build/*/spec.gmk ]; then
+            echo "配置成功完成"
+            cat build/*/spec.gmk | grep -E "CONF_NAME|JDK_VERSION|BOOT_JDK"
+          else
+            echo "配置失败"
+            exit 1
+          fi
+      
+      - name: 编译 JDK
+        run: |
+          make images CONF=linux-x86_64-server-fastdebug
+        timeout-minutes: 60
+      
+      - name: 验证构建结果
+        run: |
+          if [ -d build/*/images/jdk ]; then
+            echo "✅ JDK 编译成功！"
+            echo "JDK 版本信息:"
+            ./build/*/images/jdk/bin/java -version
+            echo "构建产物大小:"
+            du -sh build/*/images/jdk
+          else
+            echo "❌ JDK 编译失败：找不到输出目录"
+            exit 1
+          fi
+      
+      - name: 运行基础测试
+        run: |
+          make run-test-tier1
+        continue-on-error: true  # 测试失败不影响 workflow 状态
+        timeout-minutes: 30
