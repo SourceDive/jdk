@@ -53,7 +53,14 @@ jobs:
       
       - name: 配置构建
         run: |
-          bash configure --with-debug-level=release --disable-warnings-as-errors
+          bash configure \
+            --with-debug-level=release \
+            --disable-warnings-as-errors \
+            --with-extra-cflags="-Wno-error" \
+            --with-extra-cxxflags="-Wno-error"
+        env:
+          LC_ALL: en_US.UTF-8
+          LANG: en_US.UTF-8
       
       - name: 显示配置信息
         run: |
@@ -69,6 +76,10 @@ jobs:
         run: |
           make images
         timeout-minutes: 60
+        env:
+          LC_ALL: en_US.UTF-8
+          LANG: en_US.UTF-8
+          JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF-8"
       
       - name: 验证构建结果
         run: |
