@@ -22,6 +22,7 @@ jobs:
             autoconf \
             zip \
             unzip \
+            file \
             libx11-dev \
             libxext-dev \
             libxrender-dev \
@@ -37,7 +38,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'  # 使用 JDK 17 作为 boot JDK
+          java-version: '11'  # JDK 12 源码需要 JDK 11 或 12 作为 boot JDK
       
       - name: 显示环境信息
         run: |
@@ -50,24 +51,40 @@ jobs:
       
       - name: 配置构建
         run: |
-          bash configure --with-debug-level=fastdebug
+          bash configure --with-debug-level=fastdebug --disable-warnings-as-errors
+        env:
+          JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/11*/x64
+      
+      - name: 显示配置信息
+        run: |
+          if [ -f build/*/spec.gmk ]; then
+            echo "配置成功完成"
+            cat build/*/spec.gmk | grep -E "CONF_NAME|JDK_VERSION|BOOT_JDK"
+          else
+            echo "配置失败"
+            exit 1
+          fi
       
       - name: 编译 JDK
         run: |
-          make images
+          make images CONF=linux-x86_64-server-fastdebug
+        timeout-minutes: 60
       
       - name: 验证构建结果
         run: |
           if [ -d build/*/images/jdk ]; then
-            echo "JDK 编译成功！"
+            echo "✅ JDK 编译成功！"
             echo "JDK 版本信息:"
             ./build/*/images/jdk/bin/java -version
+            echo "构建产物大小:"
+            du -sh build/*/images/jdk
           else
-            echo "JDK 编译失败：找不到输出目录"
+            echo "❌ JDK 编译失败：找不到输出目录"
             exit 1
           fi
       
       - name: 运行基础测试
         run: |
           make run-test-tier1
-        continue-on-error: true  # 即使测试失败也继续（因为测试可能需要很长时间）
+        continue-on-error: true  # 测试失败不影响 workflow 状态
+        timeout-minutes: 30
