@@ -52,8 +52,6 @@ jobs:
       - name: 配置构建
         run: |
           bash configure --with-debug-level=fastdebug --disable-warnings-as-errors
-        env:
-          JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/11*/x64
       
       - name: 显示配置信息
         run: |
