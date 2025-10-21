@@ -178,6 +178,7 @@ import java.util.Queue;
  */
 public interface BlockingQueue<E> extends Queue<E> {
     /**
+     * <p>添加给定的元素到队列中。没有空间则报错。</p>
      * Inserts the specified element into this queue if it is possible to do
      * so immediately without violating capacity restrictions, returning
      * {@code true} upon success and throwing an
@@ -198,7 +199,7 @@ public interface BlockingQueue<E> extends Queue<E> {
     boolean add(E e);
 
     /**
-     * <p>向队列中插入元素。</p>
+     * <p>向队列中插入元素。没有空间则返回false.</p>
      * Inserts the specified element into this queue if it is possible to do
      * so immediately without violating capacity restrictions, returning
      * {@code true} upon success and {@code false} if no space is currently
@@ -218,6 +219,7 @@ public interface BlockingQueue<E> extends Queue<E> {
     boolean offer(E e);
 
     /**
+     * <p>插入给定的元素到队列中。没有空间则等待。</p>
      * Inserts the specified element into this queue, waiting if necessary
      * for space to become available.
      *
@@ -232,6 +234,7 @@ public interface BlockingQueue<E> extends Queue<E> {
     void put(E e) throws InterruptedException;
 
     /**
+     * <p>插入元素到队列中。阻塞给定的时间。</p>
      * Inserts the specified element into this queue, waiting up to the
      * specified wait time if necessary for space to become available.
      *
@@ -253,6 +256,7 @@ public interface BlockingQueue<E> extends Queue<E> {
         throws InterruptedException;
 
     /**
+     * <p>拿走头部元素。没有则阻塞。</p>
      * Retrieves and removes the head of this queue, waiting if necessary
      * until an element becomes available.
      *
@@ -262,6 +266,7 @@ public interface BlockingQueue<E> extends Queue<E> {
     E take() throws InterruptedException;
 
     /**
+     * <p>拿走队列的头部元素。阻塞给定的时间。</p>
      * Retrieves and removes the head of this queue, waiting up to the
      * specified wait time if necessary for an element to become available.
      *

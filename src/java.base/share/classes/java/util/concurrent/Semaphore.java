@@ -39,7 +39,8 @@ import java.util.Collection;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
- * <p>信号量。</p>
+ * <p>信号信量。</p>
+ *  * <p>信号量只有总量的概念。获取到一个permit后，总量减少1个，返回给用户只有true或false，并不会返回给用户到底是哪个许可证。</p>
  * A counting semaphore.  Conceptually, a semaphore maintains a set of
  * permits(许可).  Each {@link #acquire} blocks if necessary until a permit is
  * available, and then takes it.  Each {@link #release} adds a permit,
@@ -343,7 +344,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
-     * <p>获取一个许可。</p>
+     * <p>获取一个许可。没有则返回false.</p>
      * Acquires a permit from this semaphore, only if one is available at the
      * time of invocation.
      *
@@ -419,6 +420,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>释放1个许可证，归还给信号量。</p>
      * Releases a permit, returning it to the semaphore.
      *
      * <p>Releases a permit, increasing the number of available permits by
@@ -436,6 +438,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>获取指定数目的许可证。没有则阻塞。</p>
      * Acquires the given number of permits from this semaphore,
      * blocking until all are available,
      * or the thread is {@linkplain Thread#interrupt interrupted}.
@@ -508,7 +511,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
-     * <p>获取给定数目的许可。</p>
+     * <p>获取给定数目的许可。没有则返回false.</p>
      * Acquires the given number of permits from this semaphore, only
      * if all are available at the time of invocation.
      *
@@ -598,6 +601,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>释放给定数目的许可证，归还给信号量。</p>
      * Releases the given number of permits, returning them to the semaphore.
      *
      * <p>Releases the given number of permits, increasing the number of

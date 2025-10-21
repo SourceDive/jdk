@@ -569,6 +569,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     E element();
 
     /**
+     * <p>获取头部元素，但是并不移除。</p>
      * Retrieves, but does not remove, the head of the queue represented by
      * this deque (in other words, the first element of this deque), or
      * returns {@code null} if this deque is empty.

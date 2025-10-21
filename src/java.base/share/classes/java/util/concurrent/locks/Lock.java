@@ -234,6 +234,7 @@ public interface Lock {
     void lockInterruptibly() throws InterruptedException;
 
     /**
+     * <p>尝试获取lock。获取不到返回false.</p>
      * Acquires the lock only if it is free at the time of invocation.
      *
      * <p>Acquires the lock if it is available and returns immediately
