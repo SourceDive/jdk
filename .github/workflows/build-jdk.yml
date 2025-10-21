@@ -9,6 +9,8 @@ jobs:
   build:
     name: 编译 JDK
     runs-on: ubuntu-latest
+    container:
+      image: adoptopenjdk/openjdk11:x86_64-ubuntu-jdk-11.0.11_9
     
     steps:
       - name: 检出代码
@@ -16,8 +18,8 @@ jobs:
       
       - name: 安装构建依赖
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
+          apt-get update
+          apt-get install -y \
             build-essential \
             autoconf \
             zip \
@@ -32,13 +34,8 @@ jobs:
             libcups2-dev \
             libfontconfig1-dev \
             libasound2-dev \
-            libfreetype6-dev
-      
-      - name: 设置 Boot JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '11'  # JDK 12 源码需要 JDK 11 或 12 作为 boot JDK
+            libfreetype6-dev \
+            libffi-dev
       
       - name: 显示环境信息
         run: |
@@ -48,37 +45,29 @@ jobs:
           df -h
           echo "内存信息:"
           free -h
+          echo "当前用户:"
+          whoami
+          echo "构建工具版本:"
+          gcc --version | head -1
+          make --version | head -1
       
-      - name: 清理构建目录
-        run: |
-          rm -rf build
-          
       - name: 配置构建
         run: |
           bash configure --with-debug-level=release --disable-warnings-as-errors
-          
-      - name: 预创建vardeps目录
-        run: |
-          CONF_DIR=$(ls -d build/linux-x86_64-* 2>/dev/null | head -1)
-          if [ -n "$CONF_DIR" ]; then
-            mkdir -p "$CONF_DIR/buildtools/langtools_tools_classes"
-            mkdir -p "$CONF_DIR/make-support/vardeps/make/ModuleWrapper.gmk/java.base"
-            echo "创建了vardeps目录结构"
-          fi
       
       - name: 显示配置信息
         run: |
           if [ -f build/*/spec.gmk ]; then
-            echo "配置成功完成"
+            echo "✅ 配置成功完成"
             cat build/*/spec.gmk | grep -E "CONF_NAME|JDK_VERSION|BOOT_JDK"
           else
-            echo "配置失败"
+            echo "❌ 配置失败"
             exit 1
           fi
       
       - name: 编译 JDK
         run: |
-          make all
+          make images
         timeout-minutes: 60
       
       - name: 验证构建结果
