@@ -69,7 +69,7 @@ jobs:
       
       - name: 编译 JDK
         run: |
-          make images CONF=linux-x86_64-server-fastdebug
+          make JOBS=1 images CONF=linux-x86_64-server-fastdebug
         timeout-minutes: 60
       
       - name: 验证构建结果
