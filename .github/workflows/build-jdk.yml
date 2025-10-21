@@ -67,9 +67,14 @@ jobs:
             exit 1
           fi
       
-      - name: 编译 JDK
+      - name: 编译 JDK - 构建工具
         run: |
-          make JOBS=1 images CONF=linux-x86_64-server-fastdebug
+          make buildtools-langtools buildtools-jdk CONF=linux-x86_64-server-fastdebug
+        timeout-minutes: 30
+        
+      - name: 编译 JDK - 完整构建
+        run: |
+          make images CONF=linux-x86_64-server-fastdebug
         timeout-minutes: 60
       
       - name: 验证构建结果
