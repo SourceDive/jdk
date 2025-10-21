@@ -57,10 +57,12 @@ jobs:
             --with-debug-level=release \
             --disable-warnings-as-errors \
             --with-extra-cflags="-Wno-error" \
-            --with-extra-cxxflags="-Wno-error"
+            --with-extra-cxxflags="-Wno-error" \
+            --with-extra-ldflags="-Wl,-z,noexecstack"
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
+          JAVAC_FLAGS: "-encoding UTF-8"
       
       - name: 显示配置信息
         run: |
@@ -74,12 +76,11 @@ jobs:
       
       - name: 编译 JDK
         run: |
-          make images
+          make images JAVAC_FLAGS="-encoding UTF-8"
         timeout-minutes: 60
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
-          JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF-8"
       
       - name: 验证构建结果
         run: |
