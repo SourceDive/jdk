@@ -15,16 +15,14 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # 获取完整历史以计算准确的缓存key
       
       - name: 计算源代码哈希
         id: source-hash
         run: |
           # 计算关键源文件的哈希值
-          SOURCE_HASH=$(find src make -type f \( -name "*.java" -o -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.gmk" -o -name "*.mk" \) -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1)
-          echo "hash=${SOURCE_HASH:0:16}" >> $GITHUB_OUTPUT
-          echo "源代码哈希: ${SOURCE_HASH:0:16}"
+          SOURCE_HASH=$(find src make -type f \( -name "*.java" -o -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.gmk" -o -name "*.mk" \) -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1 | cut -c1-16)
+          echo "hash=${SOURCE_HASH}" >> $GITHUB_OUTPUT
+          echo "源代码哈希: ${SOURCE_HASH}"
       
       - name: 恢复构建缓存
         id: cache-build
