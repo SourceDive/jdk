@@ -36,6 +36,7 @@
 package java.util;
 
 /**
+ * <p>抽象出队列的骨架操作。</p>
  * This class provides skeletal implementations of some {@link Queue}
  * operations. The implementations in this class are appropriate when
  * the base implementation does <em>not</em> allow {@code null}

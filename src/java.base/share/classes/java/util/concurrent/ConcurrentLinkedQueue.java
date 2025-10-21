@@ -50,6 +50,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
+ * <p>无界、线程安全的队列。</p>
  * An unbounded thread-safe {@linkplain Queue queue} based on linked nodes.
  * This queue orders elements FIFO (first-in-first-out).
  * The <em>head</em> of the queue is that element that has been on the

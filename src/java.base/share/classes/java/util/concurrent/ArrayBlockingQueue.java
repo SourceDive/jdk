@@ -50,6 +50,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
+ * <p>有界队列。</p>
  * A bounded {@linkplain BlockingQueue blocking queue} backed by an
  * array.  This queue orders elements FIFO (first-in-first-out).  The
  * <em>head</em> of the queue is that element that has been on the
