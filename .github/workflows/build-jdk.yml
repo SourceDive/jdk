@@ -15,6 +15,40 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整历史以计算准确的缓存key
+      
+      - name: 计算源代码哈希
+        id: source-hash
+        run: |
+          # 计算关键源文件的哈希值
+          SOURCE_HASH=$(find src make -type f \( -name "*.java" -o -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.gmk" -o -name "*.mk" \) -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1)
+          echo "hash=${SOURCE_HASH:0:16}" >> $GITHUB_OUTPUT
+          echo "源代码哈希: ${SOURCE_HASH:0:16}"
+      
+      - name: 恢复构建缓存
+        id: cache-build
+        uses: actions/cache@v3
+        with:
+          path: |
+            build/
+          key: jdk-build-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}
+          restore-keys: |
+            jdk-build-${{ runner.os }}-
+      
+      - name: 显示缓存状态
+        run: |
+          if [ "${{ steps.cache-build.outputs.cache-hit }}" == "true" ]; then
+            echo "🎯 缓存命中！将执行增量编译"
+            if [ -d build ]; then
+              echo "缓存的构建目录大小:"
+              du -sh build/
+              echo "缓存的构建时间:"
+              ls -ld build/
+            fi
+          else
+            echo "📦 无缓存或缓存未命中，将执行完整编译"
+          fi
       
       - name: 安装构建依赖
         run: |
@@ -76,7 +110,25 @@ jobs:
       
       - name: 编译 JDK
         run: |
+          echo "开始编译时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          START_TIME=$(date +%s)
+          
+          # 执行编译（make会自动检测已有产物并增量编译）
           make images JAVAC_FLAGS="-encoding UTF-8"
+          
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          MINUTES=$((DURATION / 60))
+          SECONDS=$((DURATION % 60))
+          
+          echo "编译完成时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "⏱️ 总编译耗时: ${MINUTES}分${SECONDS}秒"
+          
+          # 显示构建统计
+          if [ -d build ]; then
+            echo "构建目录大小:"
+            du -sh build/
+          fi
         timeout-minutes: 60
         env:
           LC_ALL: en_US.UTF-8
@@ -86,10 +138,23 @@ jobs:
         run: |
           if [ -d build/*/images/jdk ]; then
             echo "✅ JDK 编译成功！"
+            echo ""
             echo "JDK 版本信息:"
             ./build/*/images/jdk/bin/java -version
+            echo ""
             echo "构建产物大小:"
             du -sh build/*/images/jdk
+            echo ""
+            echo "完整构建目录大小:"
+            du -sh build/
+            echo ""
+            
+            # 显示增量编译效果
+            if [ "${{ steps.cache-build.outputs.cache-hit }}" == "true" ]; then
+              echo "💡 本次使用了缓存，执行了增量编译"
+            else
+              echo "📦 本次从零开始完整编译，下次将可以使用增量编译"
+            fi
           else
             echo "❌ JDK 编译失败：找不到输出目录"
             exit 1
