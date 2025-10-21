@@ -49,6 +49,10 @@ jobs:
           echo "内存信息:"
           free -h
       
+      - name: 清理构建目录
+        run: |
+          rm -rf build
+          
       - name: 配置构建
         run: |
           bash configure --with-debug-level=fastdebug --disable-warnings-as-errors
