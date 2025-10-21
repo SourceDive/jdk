@@ -55,7 +55,7 @@ jobs:
           
       - name: 配置构建
         run: |
-          bash configure --with-debug-level=fastdebug --disable-warnings-as-errors
+          bash configure --with-debug-level=release --disable-warnings-as-errors
       
       - name: 显示配置信息
         run: |
@@ -67,14 +67,9 @@ jobs:
             exit 1
           fi
       
-      - name: 编译 JDK - 构建工具
+      - name: 编译 JDK
         run: |
-          make buildtools-langtools buildtools-jdk CONF=linux-x86_64-server-fastdebug
-        timeout-minutes: 30
-        
-      - name: 编译 JDK - 完整构建
-        run: |
-          make images CONF=linux-x86_64-server-fastdebug
+          make all
         timeout-minutes: 60
       
       - name: 验证构建结果
