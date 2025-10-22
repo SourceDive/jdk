@@ -16,13 +16,22 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
       
-      - name: 计算源代码哈希
-        id: source-hash
+      - name: 生成缓存键
+        id: cache-keys
         run: |
-          # 计算关键源文件的哈希值
-          SOURCE_HASH=$(find src make -type f \( -name "*.java" -o -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.gmk" -o -name "*.mk" \) -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1 | cut -c1-16)
-          echo "hash=${SOURCE_HASH}" >> $GITHUB_OUTPUT
-          echo "源代码哈希: ${SOURCE_HASH}"
+          # 使用 Git 信息作为主要缓存键（更稳定可靠）
+          GIT_HASH="${{ github.sha }}"
+          
+          # 获取当前日期（用于定期刷新缓存）
+          WEEK=$(date +%Y-W%V)
+          
+          # 计算关键配置文件的哈希（比全源码哈希更快更精准）
+          CONFIG_HASH=$(cat configure make/autoconf/*.m4 make/Main.gmk 2>/dev/null | sha256sum | cut -d' ' -f1 | cut -c1-8)
+          
+          echo "git-hash=${GIT_HASH}" >> $GITHUB_OUTPUT
+          echo "week=${WEEK}" >> $GITHUB_OUTPUT
+          echo "config-hash=${CONFIG_HASH}" >> $GITHUB_OUTPUT
+          echo "缓存键信息: git=${GIT_HASH:0:8}, week=${WEEK}, config=${CONFIG_HASH}"
       
       - name: 恢复构建缓存
         id: cache-build
@@ -30,9 +39,13 @@ jobs:
         with:
           path: |
             build/
-          key: jdk-build-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}
+            !build/*/configure-support/
+            !build/*/make-support/
+            !build/*/*.log
+          key: jdk-build-v2-${{ runner.os }}-${{ steps.cache-keys.outputs.config-hash }}-${{ steps.cache-keys.outputs.git-hash }}
           restore-keys: |
-            jdk-build-${{ runner.os }}-
+            jdk-build-v2-${{ runner.os }}-${{ steps.cache-keys.outputs.config-hash }}-
+            jdk-build-v2-${{ runner.os }}-
       
       - name: 显示缓存状态
         run: |
@@ -84,14 +97,28 @@ jobs:
           make --version | head -1
       
       - name: 配置构建
-        if: steps.cache-build.outputs.cache-hit != 'true'
         run: |
-          bash configure \
-            --with-debug-level=release \
-            --disable-warnings-as-errors \
-            --with-extra-cflags="-Wno-error" \
-            --with-extra-cxxflags="-Wno-error" \
-            --with-extra-ldflags="-Wl,-z,noexecstack"
+          # 检查是否需要重新配置
+          NEED_CONFIGURE=false
+          
+          if [ "${{ steps.cache-build.outputs.cache-hit }}" != "true" ]; then
+            echo "📦 无缓存，需要执行配置"
+            NEED_CONFIGURE=true
+          elif [ ! -f build/*/spec.gmk ]; then
+            echo "⚠️ 缓存中缺少配置文件，需要重新配置"
+            NEED_CONFIGURE=true
+          else
+            echo "✅ 使用缓存的配置"
+          fi
+          
+          if [ "$NEED_CONFIGURE" = "true" ]; then
+            bash configure \
+              --with-debug-level=release \
+              --disable-warnings-as-errors \
+              --with-extra-cflags="-Wno-error" \
+              --with-extra-cxxflags="-Wno-error" \
+              --with-extra-ldflags="-Wl,-z,noexecstack"
+          fi
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
@@ -118,12 +145,12 @@ jobs:
           
           # 执行编译（make会自动检测已有产物并增量编译）
           if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
-            echo "🎯 使用缓存，跳过配置检查"
-            make images JAVAC_FLAGS="-encoding UTF-8" CONF_CHECK=ignore
+            echo "🎯 使用缓存，执行增量编译"
           else
             echo "📦 首次编译，执行完整构建"
-            make images JAVAC_FLAGS="-encoding UTF-8"
           fi
+          
+          make images JAVAC_FLAGS="-encoding UTF-8"
           
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
@@ -167,6 +194,30 @@ jobs:
           else
             echo "❌ JDK 编译失败：找不到输出目录"
             exit 1
+          fi
+      
+      - name: 清理构建临时文件
+        if: success()
+        run: |
+          echo "🧹 清理临时文件以优化缓存..."
+          
+          # 清理日志文件
+          find build -type f -name "*.log" -delete 2>/dev/null || true
+          
+          # 清理临时文件
+          find build -type f -name "*.tmp" -delete 2>/dev/null || true
+          find build -type f -name ".*.tmp" -delete 2>/dev/null || true
+          
+          # 清理支持目录（下次构建会重新生成）
+          rm -rf build/*/configure-support/ 2>/dev/null || true
+          rm -rf build/*/make-support/ 2>/dev/null || true
+          
+          echo "✅ 临时文件清理完成"
+          
+          # 显示清理后的大小
+          if [ -d build ]; then
+            echo "清理后构建目录大小:"
+            du -sh build/
           fi
       
       - name: 运行简单验证测试
