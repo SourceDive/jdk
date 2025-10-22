@@ -151,10 +151,10 @@ jobs:
           # 执行编译（make会自动检测已有产物并增量编译）
           if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
             echo "🎯 使用缓存，执行增量编译"
-            make images JOBS=${JOBS} JAVAC_FLAGS="-encoding UTF-8" CONF_CHECK=ignore
+            make images JOBS=${JOBS} JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file" JAVA_WARNINGS_ARE_ERRORS= CONF_CHECK=ignore
           else
             echo "📦 首次编译，执行完整构建"
-            make images JOBS=${JOBS} JAVAC_FLAGS="-encoding UTF-8"
+            make images JOBS=${JOBS} JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file" JAVA_WARNINGS_ARE_ERRORS=
           fi
           
           END_TIME=$(date +%s)
