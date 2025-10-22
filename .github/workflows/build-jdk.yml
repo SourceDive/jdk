@@ -34,9 +34,18 @@ jobs:
           restore-keys: |
             jdk-build-${{ runner.os }}-
       
+      - name: 调试缓存输出
+        run: |
+          echo "=== 缓存调试信息 ==="
+          echo "cache-hit 输出值: '${{ steps.cache-build.outputs.cache-hit }}'"
+          echo "cache-matched-key: '${{ steps.cache-build.outputs.cache-matched-key }}'"
+          echo "cache-primary-key: 'jdk-build-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}'"
+          echo "==================="
+      
       - name: 显示缓存状态
         run: |
-          if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
+          echo "缓存命中状态: '${{ steps.cache-build.outputs.cache-hit }}'"
+          if [ "${{ steps.cache-build.outputs.cache-hit }}" == "true" ]; then
             echo "🎯 缓存命中！将执行增量编译"
             if [ -d build ]; then
               echo "缓存的构建目录大小:"
@@ -100,7 +109,7 @@ jobs:
       - name: 显示配置信息
         run: |
           if [ -f build/*/spec.gmk ]; then
-            if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
+            if [ "${{ steps.cache-build.outputs.cache-hit }}" == "true" ]; then
               echo "✅ 使用缓存的配置"
             else
               echo "✅ 配置成功完成"
@@ -117,7 +126,7 @@ jobs:
           START_TIME=$(date +%s)
           
           # 执行编译（make会自动检测已有产物并增量编译）
-          if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
+          if [ "${{ steps.cache-build.outputs.cache-hit }}" == "true" ]; then
             echo "🎯 使用缓存，跳过配置检查"
             make images JAVAC_FLAGS="-encoding UTF-8" CONF_CHECK=ignore
           else
@@ -159,7 +168,7 @@ jobs:
             echo ""
             
             # 显示增量编译效果
-            if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
+            if [ "${{ steps.cache-build.outputs.cache-hit }}" == "true" ]; then
               echo "💡 本次使用了缓存，执行了增量编译"
             else
               echo "📦 本次从零开始完整编译，下次将可以使用增量编译"
