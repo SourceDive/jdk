@@ -44,7 +44,6 @@ jobs:
         with:
           path: |
             build/
-            ~/.ccache
           key: jdk-build-v2-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}
           restore-keys: |
             jdk-build-v2-${{ runner.os }}-${{ steps.source-hash.outputs.file-hash }}
@@ -71,11 +70,6 @@ jobs:
             echo "提示：首次构建后，后续构建将使用缓存加速"
           fi
           
-          # 显示 ccache 缓存状态
-          if [ -d ~/.ccache ]; then
-            echo -e "\nccache 缓存信息:"
-            du -sh ~/.ccache || true
-          fi
       
       - name: 安装构建依赖
         run: |
@@ -96,13 +90,7 @@ jobs:
             libfontconfig1-dev \
             libasound2-dev \
             libfreetype6-dev \
-            libffi-dev \
-            ccache
-          
-          # 配置 ccache
-          ccache --max-size=2G
-          ccache --set-config=compression=true
-          ccache --set-config=compression_level=6
+            libffi-dev
       
       - name: 显示环境信息
         run: |
@@ -125,23 +113,12 @@ jobs:
             echo "检测到已有配置，configure 将快速完成..."
           fi
           
-          # 检查 ccache 是否可用
-          if command -v ccache >/dev/null 2>&1; then
-            echo "ccache 已安装，版本: $(ccache --version | head -1)"
-            export PATH="/usr/lib/ccache:$PATH"
-            CCACHE_OPT="--enable-ccache"
-          else
-            echo "ccache 未找到，将不使用 ccache"
-            CCACHE_OPT=""
-          fi
-          
           bash configure \
             --with-debug-level=release \
             --disable-warnings-as-errors \
             --with-extra-cflags="-Wno-error" \
             --with-extra-cxxflags="-Wno-error" \
-            --with-extra-ldflags="-Wl,-z,noexecstack" \
-            $CCACHE_OPT
+            --with-extra-ldflags="-Wl,-z,noexecstack"
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
@@ -170,10 +147,6 @@ jobs:
           JOBS=$(nproc)
           echo "使用 ${JOBS} 个并行任务编译"
           
-          # 设置 ccache（如果可用）
-          if command -v ccache >/dev/null 2>&1; then
-            export PATH="/usr/lib/ccache:$PATH"
-          fi
           
           # 执行编译（make会自动检测已有产物并增量编译）
           if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
@@ -198,9 +171,6 @@ jobs:
             du -sh build/
           fi
           
-          # 显示 ccache 统计
-          echo -e "\nccache 统计:"
-          ccache --show-stats || true
         timeout-minutes: 60
         env:
           LC_ALL: en_US.UTF-8
