@@ -120,14 +120,19 @@ jobs:
       
       - name: 配置构建
         run: |
-          # 设置 ccache
-          export PATH="/usr/lib/ccache:$PATH"
-          export CC="ccache gcc"
-          export CXX="ccache g++"
-          
           # 即使缓存命中也运行配置，configure 会自动检测已有配置
           if [ -f build/*/spec.gmk ] && [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
             echo "检测到已有配置，configure 将快速完成..."
+          fi
+          
+          # 检查 ccache 是否可用
+          if command -v ccache >/dev/null 2>&1; then
+            echo "ccache 已安装，版本: $(ccache --version | head -1)"
+            export PATH="/usr/lib/ccache:$PATH"
+            CCACHE_OPT="--enable-ccache"
+          else
+            echo "ccache 未找到，将不使用 ccache"
+            CCACHE_OPT=""
           fi
           
           bash configure \
@@ -136,7 +141,7 @@ jobs:
             --with-extra-cflags="-Wno-error" \
             --with-extra-cxxflags="-Wno-error" \
             --with-extra-ldflags="-Wl,-z,noexecstack" \
-            --enable-ccache
+            $CCACHE_OPT
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
@@ -165,8 +170,10 @@ jobs:
           JOBS=$(nproc)
           echo "使用 ${JOBS} 个并行任务编译"
           
-          # 设置 ccache
-          export PATH="/usr/lib/ccache:$PATH"
+          # 设置 ccache（如果可用）
+          if command -v ccache >/dev/null 2>&1; then
+            export PATH="/usr/lib/ccache:$PATH"
+          fi
           
           # 执行编译（make会自动检测已有产物并增量编译）
           if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
