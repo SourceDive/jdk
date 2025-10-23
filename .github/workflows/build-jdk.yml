@@ -19,10 +19,23 @@ jobs:
       - name: 计算源代码哈希
         id: source-hash
         run: |
-          # 计算关键源文件的哈希值
-          SOURCE_HASH=$(find src make -type f \( -name "*.java" -o -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.gmk" -o -name "*.mk" \) -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1 | cut -c1-16)
-          echo "hash=${SOURCE_HASH}" >> $GITHUB_OUTPUT
-          echo "源代码哈希: ${SOURCE_HASH}"
+          # 基于文件内容的哈希（忽略时间戳）
+          FILE_HASH=$(find src make -type f \( -name "*.java" -o -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.gmk" -o -name "*.mk" \) -print0 | \
+            sort -z | \
+            xargs -0 sha256sum | \
+            awk '{print $1}' | \
+            sha256sum | \
+            cut -d' ' -f1 | \
+            cut -c1-16)
+          
+          # 使用 GitHub 提供的 commit SHA
+          GITHUB_SHA_SHORT=$(echo "${{ github.sha }}" | cut -c1-16)
+          
+          # 使用文件内容哈希作为主要标识（更稳定）
+          echo "hash=${FILE_HASH}" >> $GITHUB_OUTPUT
+          echo "github-sha=${GITHUB_SHA_SHORT}" >> $GITHUB_OUTPUT
+          echo "文件内容哈希: ${FILE_HASH}"
+          echo "GitHub SHA: ${GITHUB_SHA_SHORT}"
       
       - name: 恢复构建缓存
         id: cache-build
@@ -30,23 +43,32 @@ jobs:
         with:
           path: |
             build/
-          key: jdk-build-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}
+          key: jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}
           restore-keys: |
-            jdk-build-${{ runner.os }}-
+            jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}
+            jdk-build-v3-${{ runner.os }}-
       
       - name: 显示缓存状态
         run: |
+          echo "=== 缓存键信息 ==="
+          echo "主键: jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}"
+          echo "GitHub SHA 备用键: jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}"
+          
           if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
-            echo "🎯 缓存命中！将执行增量编译"
+            echo "🎯 缓存完全命中！将执行增量编译"
             if [ -d build ]; then
               echo "缓存的构建目录大小:"
               du -sh build/
               echo "缓存的构建时间:"
               ls -ld build/
+              echo "缓存文件数量:"
+              find build -type f | wc -l
             fi
           else
             echo "📦 无缓存或缓存未命中，将执行完整编译"
+            echo "提示：首次构建后，后续构建将使用缓存加速"
           fi
+          
       
       - name: 安装构建依赖
         run: |
@@ -84,14 +106,19 @@ jobs:
           make --version | head -1
       
       - name: 配置构建
-        if: steps.cache-build.outputs.cache-hit != 'true'
         run: |
+          # 即使缓存命中也运行配置，configure 会自动检测已有配置
+          if [ -f build/*/spec.gmk ] && [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
+            echo "检测到已有配置，configure 将快速完成..."
+          fi
+          
           bash configure \
             --with-debug-level=release \
             --disable-warnings-as-errors \
             --with-extra-cflags="-Wno-error" \
             --with-extra-cxxflags="-Wno-error" \
-            --with-extra-ldflags="-Wl,-z,noexecstack"
+            --with-extra-ldflags="-Wl,-z,noexecstack" \
+            --disable-javac-server
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
@@ -116,13 +143,18 @@ jobs:
           echo "开始编译时间: $(date '+%Y-%m-%d %H:%M:%S')"
           START_TIME=$(date +%s)
           
+          # 设置并行编译
+          JOBS=$(nproc)
+          echo "使用 ${JOBS} 个并行任务编译"
+          
+          
           # 执行编译（make会自动检测已有产物并增量编译）
           if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
-            echo "🎯 使用缓存，跳过配置检查"
-            make images JAVAC_FLAGS="-encoding UTF-8" CONF_CHECK=ignore
+            echo "🎯 使用缓存，执行增量编译"
+            make images JOBS=${JOBS} JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none" WARNINGS_AS_ERRORS=false CONF_CHECK=ignore
           else
             echo "📦 首次编译，执行完整构建"
-            make images JAVAC_FLAGS="-encoding UTF-8"
+            make images JOBS=${JOBS} JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none" WARNINGS_AS_ERRORS=false
           fi
           
           END_TIME=$(date +%s)
@@ -138,6 +170,7 @@ jobs:
             echo "构建目录大小:"
             du -sh build/
           fi
+          
         timeout-minutes: 60
         env:
           LC_ALL: en_US.UTF-8
