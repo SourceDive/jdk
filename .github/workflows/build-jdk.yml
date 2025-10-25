@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: adoptopenjdk/openjdk11:x86_64-ubuntu-jdk-11.0.11_9
+    outputs:
+      source-hash: ${{ steps.source-hash.outputs.hash }}
+      build-success: ${{ steps.verify-build.outputs.success }}
     
     steps:
       - name: 检出代码
@@ -177,6 +180,7 @@ jobs:
           LANG: en_US.UTF-8
       
       - name: 验证构建结果
+        id: verify-build
         run: |
           if [ -d build/*/images/jdk ]; then
             echo "✅ JDK 编译成功！"
@@ -197,8 +201,11 @@ jobs:
             else
               echo "📦 本次从零开始完整编译，下次将可以使用增量编译"
             fi
+            
+            echo "success=true" >> $GITHUB_OUTPUT
           else
             echo "❌ JDK 编译失败：找不到输出目录"
+            echo "success=false" >> $GITHUB_OUTPUT
             exit 1
           fi
       
@@ -262,3 +269,151 @@ jobs:
           
           echo -e "\n✅ 所有简单验证测试通过!"
         timeout-minutes: 5
+      
+      - name: 准备构建产物
+        run: |
+          echo "=== 准备构建产物用于上传 ==="
+          
+          # 创建产物目录
+          mkdir -p artifacts
+          
+          # 复制JDK构建产物
+          if [ -d build/*/images/jdk ]; then
+            JDK_DIR=$(ls -d build/*/images/jdk | head -1)
+            echo "复制JDK目录: $JDK_DIR"
+            cp -r $JDK_DIR artifacts/jdk
+            echo "JDK产物大小:"
+            du -sh artifacts/jdk
+          fi
+          
+          # 复制JRE构建产物（如果存在）
+          if [ -d build/*/images/jre ]; then
+            JRE_DIR=$(ls -d build/*/images/jre | head -1)
+            echo "复制JRE目录: $JRE_DIR"
+            cp -r $JRE_DIR artifacts/jre
+            echo "JRE产物大小:"
+            du -sh artifacts/jre
+          fi
+          
+          # 创建构建信息文件
+          cat > artifacts/build-info.txt << EOF
+构建时间: $(date '+%Y-%m-%d %H:%M:%S')
+Git提交: ${{ github.sha }}
+分支: ${{ github.ref_name }}
+工作流: ${{ github.workflow }}
+运行器: ${{ runner.os }}
+Java版本: $(java -version 2>&1 | head -1)
+构建配置: ${{ steps.source-hash.outputs.hash }}
+EOF
+          
+          # 显示产物信息
+          echo "=== 构建产物信息 ==="
+          ls -la artifacts/
+          echo ""
+          echo "产物总大小:"
+          du -sh artifacts/
+          echo ""
+          echo "构建信息:"
+          cat artifacts/build-info.txt
+      
+      - name: 上传JDK构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: jdk-build-artifacts-${{ steps.source-hash.outputs.hash }}
+          path: artifacts/
+          retention-days: 30
+          compression-level: 6
+      
+      - name: 上传构建日志
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-logs-${{ steps.source-hash.outputs.hash }}
+          path: |
+            build/*/support/global.log
+            build/*/support/configure.log
+          retention-days: 7
+          compression-level: 6
+
+  download-artifacts:
+    name: 下载构件
+    runs-on: ubuntu-latest
+    needs: build
+    if: always()
+    
+    steps:
+      - name: 获取构建哈希
+        id: get-hash
+        run: |
+          # 从构建job获取哈希值
+          echo "构建job状态: ${{ needs.build.result }}"
+          if [ "${{ needs.build.result }}" = "success" ]; then
+            echo "hash=${{ needs.build.outputs.source-hash }}" >> $GITHUB_OUTPUT
+            echo "使用构建哈希: ${{ needs.build.outputs.source-hash }}"
+          else
+            echo "构建失败，使用当前提交SHA"
+            echo "hash=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "使用提交SHA: ${{ github.sha }}"
+          fi
+      
+      - name: 下载JDK构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: jdk-build-artifacts-${{ steps.get-hash.outputs.hash }}
+          path: downloaded-artifacts/
+        continue-on-error: true
+      
+      - name: 显示下载的构件信息
+        run: |
+          echo "=== 下载的构件信息 ==="
+          if [ -d downloaded-artifacts ] && [ "$(ls -A downloaded-artifacts)" ]; then
+            echo "✅ 成功下载构件"
+            echo "构件目录内容:"
+            ls -la downloaded-artifacts/
+            echo ""
+            echo "构件大小:"
+            du -sh downloaded-artifacts/
+            echo ""
+            if [ -f downloaded-artifacts/build-info.txt ]; then
+              echo "构建信息:"
+              cat downloaded-artifacts/build-info.txt
+            fi
+            echo ""
+            if [ -d downloaded-artifacts/jdk ]; then
+              echo "JDK版本信息:"
+              downloaded-artifacts/jdk/bin/java -version
+            fi
+          else
+            echo "❌ 未找到下载的构件"
+            echo "可能的原因:"
+            echo "1. 构建失败，没有生成构件"
+            echo "2. 构件名称不匹配"
+            echo "3. 构件已过期被删除"
+            echo ""
+            echo "尝试查找可用的构件:"
+            echo "当前分支: ${{ github.ref_name }}"
+            echo "当前提交: ${{ github.sha }}"
+            echo "构建状态: ${{ needs.build.result }}"
+          fi
+      
+      - name: 创建构件压缩包
+        run: |
+          if [ -d downloaded-artifacts ] && [ "$(ls -A downloaded-artifacts)" ]; then
+            echo "=== 创建构件压缩包 ==="
+            cd downloaded-artifacts
+            tar -czf ../jdk-artifacts-${{ github.sha }}.tar.gz .
+            cd ..
+            echo "压缩包大小:"
+            ls -lh jdk-artifacts-*.tar.gz
+            echo "压缩包创建完成: jdk-artifacts-${{ github.sha }}.tar.gz"
+          else
+            echo "⚠️ 没有构件可压缩"
+          fi
+      
+      - name: 上传构件压缩包
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: jdk-compressed-artifacts-${{ github.sha }}
+          path: jdk-artifacts-*.tar.gz
+          retention-days: 30
