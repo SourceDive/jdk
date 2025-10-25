@@ -46,19 +46,21 @@ jobs:
         with:
           path: |
             build/
-          key: jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}
+            .buildcache/
+          key: jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}-${{ hashFiles('**/Makefile', '**/*.gmk') }}
           restore-keys: |
-            jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}
-            jdk-build-v3-${{ runner.os }}-
+            jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}-
+            jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}-
+            jdk-build-v4-${{ runner.os }}-
       
       - name: 显示缓存状态
         run: |
           echo "=== 缓存键信息 ==="
-          echo "主键: jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}"
-          echo "GitHub SHA 备用键: jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}"
+          echo "主键: jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}-${{ hashFiles('**/Makefile', '**/*.gmk') }}"
+          echo "备用键: jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}-*"
           
           if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
-            echo "🎯 缓存完全命中！将执行增量编译"
+            echo "🎯 缓存命中！"
             if [ -d build ]; then
               echo "缓存的构建目录大小:"
               du -sh build/
@@ -66,6 +68,20 @@ jobs:
               ls -ld build/
               echo "缓存文件数量:"
               find build -type f | wc -l
+              
+              # 检查关键构建产物
+              echo ""
+              echo "=== 缓存内容检查 ==="
+              if [ -d build/*/images/jdk ]; then
+                echo "✅ 发现完整JDK构建产物"
+                echo "JDK大小: $(du -sh build/*/images/jdk | cut -f1)"
+              fi
+              if [ -d build/*/support ]; then
+                echo "✅ 发现构建支持文件"
+              fi
+              if [ -d build/*/make ]; then
+                echo "✅ 发现Make配置"
+              fi
             fi
           else
             echo "📦 无缓存或缓存未命中，将执行完整编译"
@@ -141,6 +157,41 @@ jobs:
             exit 1
           fi
       
+      - name: 分析缓存状态
+        id: cache-analysis
+        run: |
+          echo "=== 缓存分析 ==="
+          if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
+            echo "🎯 缓存命中"
+            
+            # 检查关键构建产物是否存在
+            if [ -d build/*/images/jdk ]; then
+              echo "✅ 发现完整的JDK构建产物"
+              echo "incremental=true" >> $GITHUB_OUTPUT
+              echo "build-strategy=incremental" >> $GITHUB_OUTPUT
+            elif [ -d build/*/support ]; then
+              echo "⚠️ 发现部分构建产物，需要增量编译"
+              echo "incremental=true" >> $GITHUB_OUTPUT
+              echo "build-strategy=incremental" >> $GITHUB_OUTPUT
+            else
+              echo "❌ 缓存不完整，需要重新构建"
+              echo "incremental=false" >> $GITHUB_OUTPUT
+              echo "build-strategy=full" >> $GITHUB_OUTPUT
+            fi
+            
+            # 显示缓存内容
+            echo "缓存内容分析:"
+            if [ -d build ]; then
+              echo "构建目录大小: $(du -sh build/ | cut -f1)"
+              echo "构建目录结构:"
+              find build -maxdepth 2 -type d | head -10
+            fi
+          else
+            echo "📦 缓存未命中，需要完整构建"
+            echo "incremental=false" >> $GITHUB_OUTPUT
+            echo "build-strategy=full" >> $GITHUB_OUTPUT
+          fi
+      
       - name: 编译 JDK
         run: |
           echo "开始编译时间: $(date '+%Y-%m-%d %H:%M:%S')"
@@ -149,15 +200,27 @@ jobs:
           # 设置并行编译
           JOBS=$(nproc)
           echo "使用 ${JOBS} 个并行任务编译"
+          echo "构建策略: ${{ steps.cache-analysis.outputs.build-strategy }}"
           
-          
-          # 执行编译（make会自动检测已有产物并增量编译）
-          if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
-            echo "🎯 使用缓存，执行增量编译"
-            make images JOBS=${JOBS} JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none" WARNINGS_AS_ERRORS=false CONF_CHECK=ignore
+          # 根据缓存状态选择编译策略
+          if [ "${{ steps.cache-analysis.outputs.incremental }}" = "true" ]; then
+            echo "🎯 执行增量编译"
+            echo "跳过已完成的模块，只编译变更部分"
+            
+            # 使用更激进的增量编译选项
+            make images JOBS=${JOBS} \
+              JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none" \
+              WARNINGS_AS_ERRORS=false \
+              CONF_CHECK=ignore \
+              LOG_LEVEL=info \
+              HOTSPOT_BUILD_JOBS=${JOBS}
           else
-            echo "📦 首次编译，执行完整构建"
-            make images JOBS=${JOBS} JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none" WARNINGS_AS_ERRORS=false
+            echo "📦 执行完整构建"
+            make images JOBS=${JOBS} \
+              JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none" \
+              WARNINGS_AS_ERRORS=false \
+              LOG_LEVEL=info \
+              HOTSPOT_BUILD_JOBS=${JOBS}
           fi
           
           END_TIME=$(date +%s)
@@ -168,10 +231,39 @@ jobs:
           echo "编译完成时间: $(date '+%Y-%m-%d %H:%M:%S')"
           echo "⏱️ 总编译耗时: ${MINUTES}分${SECONDS}秒"
           
+          # 分析编译时间
+          echo ""
+          echo "=== 编译时间分析 ==="
+          if [ "${{ steps.cache-analysis.outputs.incremental }}" = "true" ]; then
+            if [ ${DURATION} -gt 1800 ]; then
+              echo "⚠️ 增量编译时间较长 (${MINUTES}分${SECONDS}秒)"
+              echo "可能原因:"
+              echo "1. 缓存不完整，需要重新编译大量文件"
+              echo "2. 依赖关系复杂，需要重新链接"
+              echo "3. 原生代码需要重新编译"
+              echo "4. 并行度设置可能不够优化"
+            else
+              echo "✅ 增量编译时间合理 (${MINUTES}分${SECONDS}秒)"
+            fi
+          else
+            echo "📦 完整构建时间: ${MINUTES}分${SECONDS}秒"
+            if [ ${DURATION} -gt 3600 ]; then
+              echo "⚠️ 完整构建时间较长，建议优化:"
+              echo "1. 增加并行度 (当前: ${JOBS})"
+              echo "2. 使用更快的构建机器"
+              echo "3. 优化编译器选项"
+            fi
+          fi
+          
           # 显示构建统计
           if [ -d build ]; then
+            echo ""
+            echo "=== 构建统计 ==="
             echo "构建目录大小:"
             du -sh build/
+            echo ""
+            echo "各模块大小:"
+            find build -name "images" -type d -exec du -sh {} \; | head -5
           fi
           
         timeout-minutes: 60
