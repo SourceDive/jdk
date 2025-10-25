@@ -262,3 +262,32 @@ jobs:
           
           echo -e "\n✅ 所有简单验证测试通过!"
         timeout-minutes: 5
+      
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v3
+        with:
+          name: jdk-build-artifacts-${{ steps.source-hash.outputs.hash }}
+          path: build/*/images/jdk/
+          retention-days: 30
+        if: success()
+      
+      - name: 创建构建摘要
+        run: |
+          echo "## 🎉 JDK 构建完成" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 构建产物" >> $GITHUB_STEP_SUMMARY
+          echo "- **产物名称**: jdk-build-artifacts-${{ steps.source-hash.outputs.hash }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **产物路径**: build/*/images/jdk/" >> $GITHUB_STEP_SUMMARY
+          echo "- **保留时间**: 30天" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 下载方式" >> $GITHUB_STEP_SUMMARY
+          echo "1. 进入 Actions 页面" >> $GITHUB_STEP_SUMMARY
+          echo "2. 选择本次构建任务" >> $GITHUB_STEP_SUMMARY
+          echo "3. 在 Artifacts 部分下载 \`jdk-build-artifacts-${{ steps.source-hash.outputs.hash }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 使用方法" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "export JAVA_HOME=/path/to/extracted/jdk" >> $GITHUB_STEP_SUMMARY
+          echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> $GITHUB_STEP_SUMMARY
+          echo "java -version" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
