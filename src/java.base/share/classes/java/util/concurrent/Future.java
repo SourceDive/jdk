@@ -84,7 +84,7 @@ package java.util.concurrent;
  * @see Executor
  * @since 1.5
  * @author Doug Lea
- * @param <V> The result type returned by this Future's {@code get} method
+ * @param <V> The result type returned by this Future's {@code get} method 返回值的类型。
  */
 public interface Future<V> {
 

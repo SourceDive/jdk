@@ -245,6 +245,9 @@ public class Object {
     }
 
     /**
+     * <p>调用者：持有该对象的锁。</p>
+     * <p>在当前等待这个 object 的 monitor 中的线程中，唤醒一个线程。</p>
+     * <p>什么样的线程会等待这个 object 的 monitor呢？调用了这个 object 的 wait方法。</p>
      * Wakes up a single thread that is waiting on this object's
      * monitor. If any threads are waiting on this object, one of them
      * is chosen to be awakened. The choice is arbitrary and occurs at
@@ -252,12 +255,13 @@ public class Object {
      * monitor by calling one of the {@code wait} methods.
      * <p>
      * The awakened thread will not be able to proceed until the current
-     * thread relinquishes the lock on this object. The awakened thread will
+     * thread relinquishes(give up) the lock on this object. The awakened thread will
      * compete in the usual manner with any other threads that might be
      * actively competing to synchronize on this object; for example, the
      * awakened thread enjoys no reliable privilege or disadvantage in being
      * the next thread to lock this object.
      * <p>
+     *     <p>这个方法只能被持有当前对象monitor的线程调用。</p>
      * This method should only be called by a thread that is the owner
      * of this object's monitor. A thread becomes the owner of the
      * object's monitor in one of three ways:
@@ -351,6 +355,8 @@ public class Object {
     public final native void wait(long timeoutMillis) throws InterruptedException;
 
     /**
+     * <p>调用者：当前线程必须持有这个 object 的 monitor lock.</p>
+     * <p>面向当前线程，将自己加入等待队列。</p>
      * Causes the current thread to wait until it is awakened, typically
      * by being <em>notified</em> or <em>interrupted</em>, or until a
      * certain amount of real time has elapsed.

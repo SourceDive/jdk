@@ -55,7 +55,7 @@ package java.util.concurrent;
  * @see Executor
  * @since 1.5
  * @author Doug Lea
- * @param <V> the result type of method {@code call}
+ * @param <V> the result type of method {@code call} 返回值的类型。
  */
 @FunctionalInterface
 public interface Callable<V> {

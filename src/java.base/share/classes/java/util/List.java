@@ -118,7 +118,7 @@ import java.util.function.UnaryOperator;
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
- * @param <E> the type of elements in this list
+ * @param <E> the type of elements in this list 集合中元素的类型。
  *
  * @author  Josh Bloch
  * @author  Neal Gafter

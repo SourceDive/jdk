@@ -133,7 +133,7 @@ package java.util;
  *
  * @since 1.5
  * @author Doug Lea
- * @param <E> the type of elements held in this queue
+ * @param <E> the type of elements held in this queue 集合中元素的类型。
  */
 public interface Queue<E> extends Collection<E> {
     /**

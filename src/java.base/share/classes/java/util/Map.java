@@ -144,8 +144,8 @@ import java.io.Serializable;
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
- * @param <K> the type of keys maintained by this map
- * @param <V> the type of mapped values
+ * @param <K> the type of keys maintained by this map 键的类型
+ * @param <V> the type of mapped values 值的类型
  *
  * @author  Josh Bloch
  * @see HashMap

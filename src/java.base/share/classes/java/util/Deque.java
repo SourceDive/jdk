@@ -201,7 +201,7 @@ package java.util;
  * @author Doug Lea
  * @author Josh Bloch
  * @since  1.6
- * @param <E> the type of elements held in this deque
+ * @param <E> the type of elements held in this deque 集合中元素的类型。
  */
 public interface Deque<E> extends Queue<E> {
     /**

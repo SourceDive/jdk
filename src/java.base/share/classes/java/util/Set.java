@@ -95,7 +95,7 @@ package java.util;
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
- * @param <E> the type of elements maintained by this set
+ * @param <E> the type of elements maintained by this set 集合中元素的类型。
  *
  * @author  Josh Bloch
  * @author  Neal Gafter

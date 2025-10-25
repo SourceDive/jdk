@@ -88,6 +88,7 @@ public class AtomicBoolean implements java.io.Serializable {
     }
 
     /**
+     * <p>状态转换：expectedValue -> newValue。</p>
      * Atomically sets the value to {@code newValue}
      * if the current value {@code == expectedValue},
      * with memory effects as specified by {@link VarHandle#compareAndSet}.

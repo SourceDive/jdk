@@ -1386,6 +1386,8 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>设置线程为一个 daemon 线程或者 user 线程。</p>
+     * <p>JVM会在剩余线程全都为 daemon 线程时退出。</p>
      * Marks this thread as either a {@linkplain #isDaemon daemon} thread
      * or a user thread. The Java Virtual Machine exits when the only
      * threads running are all daemon threads.
@@ -1411,6 +1413,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>是否为 daemon 线程。</p>
      * Tests if this thread is a daemon thread.
      *
      * @return  {@code true} if this thread is a daemon thread;
@@ -1840,6 +1843,7 @@ class Thread implements Runnable {
         TIMED_WAITING,
 
         /**
+         * <p>线程已执行完毕。</p>
          * Thread state for a terminated thread.
          * The thread has completed execution.
          */

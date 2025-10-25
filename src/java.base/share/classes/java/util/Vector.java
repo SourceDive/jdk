@@ -79,7 +79,7 @@ import java.util.function.UnaryOperator;
  * implementation is not needed, it is recommended to use {@link
  * ArrayList} in place of {@code Vector}.
  *
- * @param <E> Type of component elements
+ * @param <E> Type of component elements 集合中元素的类型。
  *
  * @author  Lee Boynton
  * @author  Jonathan Payne
