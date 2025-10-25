@@ -27,6 +27,7 @@ package java.lang;
 import java.util.*;
 
 /**
+ * <p>也是一个函数式接口。</p>
  * This interface imposes a total ordering on the objects of each class that
  * implements it.  This ordering is referred to as the class's <i>natural
  * ordering</i>, and the class's {@code compareTo} method is referred to as
