@@ -6,7 +6,7 @@ set -e
 
 # 配置
 REPO_OWNER="SourceDive"
-REPO_NAME="jdk-12"
+REPO_NAME="jdk"
 BRANCH="cursor/download-jdk-compilation-artifacts-8976"
 
 # 颜色输出
@@ -45,10 +45,10 @@ check_status() {
     fi
     
     # 解析状态
-    local status=$(echo "$response" | grep -o '"status":"[^"]*"' | cut -d'"' -f4)
-    local conclusion=$(echo "$response" | grep -o '"conclusion":"[^"]*"' | cut -d'"' -f4)
-    local html_url=$(echo "$response" | grep -o '"html_url":"[^"]*"' | cut -d'"' -f4)
-    local created_at=$(echo "$response" | grep -o '"created_at":"[^"]*"' | cut -d'"' -f4)
+    local status=$(echo "$response" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+    local conclusion=$(echo "$response" | grep -o '"conclusion":"[^"]*"' | head -1 | cut -d'"' -f4)
+    local html_url=$(echo "$response" | grep -o '"html_url":"[^"]*"' | head -1 | cut -d'"' -f4)
+    local created_at=$(echo "$response" | grep -o '"created_at":"[^"]*"' | head -1 | cut -d'"' -f4)
     
     echo ""
     echo "=== 构建状态 ==="
