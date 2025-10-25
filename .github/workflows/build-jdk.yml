@@ -296,15 +296,13 @@ jobs:
           fi
           
           # 创建构建信息文件
-          cat > artifacts/build-info.txt << EOF
-构建时间: $(date '+%Y-%m-%d %H:%M:%S')
-Git提交: ${{ github.sha }}
-分支: ${{ github.ref_name }}
-工作流: ${{ github.workflow }}
-运行器: ${{ runner.os }}
-Java版本: $(java -version 2>&1 | head -1)
-构建配置: ${{ steps.source-hash.outputs.hash }}
-EOF
+          echo "构建时间: $(date '+%Y-%m-%d %H:%M:%S')" > artifacts/build-info.txt
+          echo "Git提交: ${{ github.sha }}" >> artifacts/build-info.txt
+          echo "分支: ${{ github.ref_name }}" >> artifacts/build-info.txt
+          echo "工作流: ${{ github.workflow }}" >> artifacts/build-info.txt
+          echo "运行器: ${{ runner.os }}" >> artifacts/build-info.txt
+          echo "Java版本: $(java -version 2>&1 | head -1)" >> artifacts/build-info.txt
+          echo "构建配置: ${{ steps.source-hash.outputs.hash }}" >> artifacts/build-info.txt
           
           # 显示产物信息
           echo "=== 构建产物信息 ==="
