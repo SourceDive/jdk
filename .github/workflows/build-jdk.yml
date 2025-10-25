@@ -234,10 +234,8 @@ jobs:
             echo "启用高并行度构建"
           fi
           
-          if [ "${{ steps.machine-config.outputs.avail-mem }}" -ge 8000 ]; then
-            CONFIGURE_ARGS="$CONFIGURE_ARGS --with-memory-size=${{ steps.machine-config.outputs.jvm-heap }}"
-            echo "启用大内存优化"
-          fi
+          # 注意：--with-memory-size 不是有效的configure选项，移除它
+          echo "将使用环境变量设置内存优化"
           
           echo "执行配置命令: bash configure $CONFIGURE_ARGS"
           bash configure $CONFIGURE_ARGS
@@ -325,13 +323,13 @@ jobs:
           sync
           echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
           
-          # 设置编译器优化
-          export CC="gcc -O${{ steps.machine-config.outputs.opt-level }} -march=native -mtune=native"
-          export CXX="g++ -O${{ steps.machine-config.outputs.opt-level }} -march=native -mtune=native"
+          # 设置编译器优化（configure脚本会处理这些）
+          export CC="gcc"
+          export CXX="g++"
           
           # 根据内存大小调整链接器选项
           if [ $AVAIL_MEM -ge 8000 ]; then
-            export LDFLAGS="-Wl,--no-as-needed -Wl,--hash-style=gnu"
+            export LDFLAGS="$LDFLAGS -Wl,--no-as-needed -Wl,--hash-style=gnu"
             echo "启用高级链接器优化"
           fi
           
