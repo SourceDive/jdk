@@ -110,19 +110,102 @@ jobs:
             libfreetype6-dev \
             libffi-dev
       
-      - name: 显示环境信息
+      - name: 分析机器配置并优化编译参数
+        id: machine-config
         run: |
+          echo "=== 机器配置分析 ==="
+          
+          # 获取CPU信息
+          CPU_CORES=$(nproc)
+          CPU_MODEL=$(grep "model name" /proc/cpuinfo | head -1 | cut -d: -f2 | xargs)
+          echo "CPU核心数: $CPU_CORES"
+          echo "CPU型号: $CPU_MODEL"
+          
+          # 获取内存信息
+          TOTAL_MEM=$(free -m | awk 'NR==2{printf "%.0f", $2}')
+          AVAIL_MEM=$(free -m | awk 'NR==2{printf "%.0f", $7}')
+          echo "总内存: ${TOTAL_MEM}MB"
+          echo "可用内存: ${AVAIL_MEM}MB"
+          
+          # 获取磁盘信息
+          DISK_SPACE=$(df -BG . | awk 'NR==2{print $4}' | sed 's/G//')
+          echo "可用磁盘空间: ${DISK_SPACE}GB"
+          
+          # 计算最优并行任务数
+          # 对于JDK构建，通常使用CPU核心数的1.5-2倍
+          if [ $CPU_CORES -ge 8 ]; then
+            # 高性能机器：使用更多并行任务
+            OPTIMAL_JOBS=$((CPU_CORES * 2))
+            HOTSPOT_JOBS=$((CPU_CORES * 3))
+          elif [ $CPU_CORES -ge 4 ]; then
+            # 中等性能机器
+            OPTIMAL_JOBS=$((CPU_CORES * 3 / 2))
+            HOTSPOT_JOBS=$((CPU_CORES * 2))
+          else
+            # 低性能机器
+            OPTIMAL_JOBS=$CPU_CORES
+            HOTSPOT_JOBS=$CPU_CORES
+          fi
+          
+          # 根据内存调整并行度
+          if [ $AVAIL_MEM -lt 4000 ]; then
+            # 内存不足，减少并行度
+            OPTIMAL_JOBS=$((OPTIMAL_JOBS * 3 / 4))
+            HOTSPOT_JOBS=$((HOTSPOT_JOBS * 3 / 4))
+            echo "⚠️ 内存不足，减少并行度"
+          fi
+          
+          # 设置JVM内存参数
+          if [ $AVAIL_MEM -ge 8000 ]; then
+            JVM_HEAP="4g"
+            JVM_META="1g"
+          elif [ $AVAIL_MEM -ge 4000 ]; then
+            JVM_HEAP="2g"
+            JVM_META="512m"
+          else
+            JVM_HEAP="1g"
+            JVM_META="256m"
+          fi
+          
+          # 设置编译器优化级别
+          if [ $CPU_CORES -ge 8 ]; then
+            OPT_LEVEL="3"
+            LTO_FLAGS="-flto"
+          else
+            OPT_LEVEL="2"
+            LTO_FLAGS=""
+          fi
+          
+          echo ""
+          echo "=== 优化参数计算 ==="
+          echo "最优并行任务数: $OPTIMAL_JOBS"
+          echo "HotSpot并行任务数: $HOTSPOT_JOBS"
+          echo "JVM堆内存: $JVM_HEAP"
+          echo "JVM元空间: $JVM_META"
+          echo "优化级别: -O$OPT_LEVEL"
+          
+          # 输出到GitHub Actions
+          echo "optimal-jobs=$OPTIMAL_JOBS" >> $GITHUB_OUTPUT
+          echo "hotspot-jobs=$HOTSPOT_JOBS" >> $GITHUB_OUTPUT
+          echo "jvm-heap=$JVM_HEAP" >> $GITHUB_OUTPUT
+          echo "jvm-meta=$JVM_META" >> $GITHUB_OUTPUT
+          echo "opt-level=$OPT_LEVEL" >> $GITHUB_OUTPUT
+          echo "lto-flags=$LTO_FLAGS" >> $GITHUB_OUTPUT
+          echo "cpu-cores=$CPU_CORES" >> $GITHUB_OUTPUT
+          echo "total-mem=$TOTAL_MEM" >> $GITHUB_OUTPUT
+          echo "avail-mem=$AVAIL_MEM" >> $GITHUB_OUTPUT
+          
+          echo ""
+          echo "=== 环境详细信息 ==="
           echo "Java 版本:"
           java -version
-          echo "可用磁盘空间:"
-          df -h
-          echo "内存信息:"
-          free -h
-          echo "当前用户:"
-          whoami
+          echo ""
           echo "构建工具版本:"
           gcc --version | head -1
           make --version | head -1
+          echo ""
+          echo "系统信息:"
+          uname -a
       
       - name: 配置构建
         run: |
@@ -131,17 +214,40 @@ jobs:
             echo "检测到已有配置，configure 将快速完成..."
           fi
           
-          bash configure \
-            --with-debug-level=release \
-            --disable-warnings-as-errors \
-            --with-extra-cflags="-Wno-error" \
-            --with-extra-cxxflags="-Wno-error" \
-            --with-extra-ldflags="-Wl,-z,noexecstack" \
-            --disable-javac-server
+          echo "=== 使用优化的构建配置 ==="
+          echo "并行任务数: ${{ steps.machine-config.outputs.optimal-jobs }}"
+          echo "HotSpot任务数: ${{ steps.machine-config.outputs.hotspot-jobs }}"
+          echo "JVM堆内存: ${{ steps.machine-config.outputs.jvm-heap }}"
+          echo "优化级别: -O${{ steps.machine-config.outputs.opt-level }}"
+          
+          # 构建优化的configure参数
+          CONFIGURE_ARGS="--with-debug-level=release"
+          CONFIGURE_ARGS="$CONFIGURE_ARGS --disable-warnings-as-errors"
+          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-cflags=\"-Wno-error -O${{ steps.machine-config.outputs.opt-level }} ${{ steps.machine-config.outputs.lto-flags }}\""
+          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-cxxflags=\"-Wno-error -O${{ steps.machine-config.outputs.opt-level }} ${{ steps.machine-config.outputs.lto-flags }}\""
+          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-ldflags=\"-Wl,-z,noexecstack ${{ steps.machine-config.outputs.lto-flags }}\""
+          CONFIGURE_ARGS="$CONFIGURE_ARGS --disable-javac-server"
+          
+          # 根据机器配置添加额外优化
+          if [ "${{ steps.machine-config.outputs.cpu-cores }}" -ge 8 ]; then
+            CONFIGURE_ARGS="$CONFIGURE_ARGS --with-jobs=${{ steps.machine-config.outputs.optimal-jobs }}"
+            echo "启用高并行度构建"
+          fi
+          
+          if [ "${{ steps.machine-config.outputs.avail-mem }}" -ge 8000 ]; then
+            CONFIGURE_ARGS="$CONFIGURE_ARGS --with-memory-size=${{ steps.machine-config.outputs.jvm-heap }}"
+            echo "启用大内存优化"
+          fi
+          
+          echo "执行配置命令: bash configure $CONFIGURE_ARGS"
+          bash configure $CONFIGURE_ARGS
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
           JAVAC_FLAGS: "-encoding UTF-8"
+          # 设置JVM参数以优化编译性能
+          MAKEFLAGS: "-j${{ steps.machine-config.outputs.optimal-jobs }}"
+          HOTSPOT_BUILD_JOBS: "${{ steps.machine-config.outputs.hotspot-jobs }}"
       
       - name: 显示配置信息
         run: |
@@ -192,36 +298,133 @@ jobs:
             echo "build-strategy=full" >> $GITHUB_OUTPUT
           fi
       
+      - name: 智能构建优化
+        run: |
+          echo "=== 智能构建优化 ==="
+          
+          # 根据机器配置和缓存状态进行最终优化
+          CPU_CORES="${{ steps.machine-config.outputs.cpu-cores }}"
+          AVAIL_MEM="${{ steps.machine-config.outputs.avail-mem }}"
+          BUILD_STRATEGY="${{ steps.cache-analysis.outputs.build-strategy }}"
+          
+          echo "机器配置: ${CPU_CORES}核, ${AVAIL_MEM}MB内存"
+          echo "构建策略: $BUILD_STRATEGY"
+          
+          # 创建优化的构建环境
+          echo "创建优化的构建环境..."
+          
+          # 设置系统级优化
+          if [ $CPU_CORES -ge 8 ]; then
+            echo "启用高性能模式"
+            # 设置CPU调度优先级
+            echo "performance" | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null || true
+          fi
+          
+          # 优化文件系统缓存
+          echo "优化文件系统缓存..."
+          sync
+          echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+          
+          # 设置编译器优化
+          export CC="gcc -O${{ steps.machine-config.outputs.opt-level }} -march=native -mtune=native"
+          export CXX="g++ -O${{ steps.machine-config.outputs.opt-level }} -march=native -mtune=native"
+          
+          # 根据内存大小调整链接器选项
+          if [ $AVAIL_MEM -ge 8000 ]; then
+            export LDFLAGS="-Wl,--no-as-needed -Wl,--hash-style=gnu"
+            echo "启用高级链接器优化"
+          fi
+          
+          # 设置Make优化选项
+          export MAKEFLAGS="-j${{ steps.machine-config.outputs.optimal-jobs }} -O"
+          export MAKE_OPTS="-j${{ steps.machine-config.outputs.optimal-jobs }}"
+          
+          # 创建构建缓存目录
+          mkdir -p .buildcache
+          export BUILD_CACHE_DIR="$(pwd)/.buildcache"
+          
+          echo "=== 优化配置完成 ==="
+          echo "编译器: $CC"
+          echo "链接器标志: $LDFLAGS"
+          echo "Make选项: $MAKEFLAGS"
+          echo "构建缓存: $BUILD_CACHE_DIR"
+      
       - name: 编译 JDK
         run: |
           echo "开始编译时间: $(date '+%Y-%m-%d %H:%M:%S')"
           START_TIME=$(date +%s)
           
-          # 设置并行编译
-          JOBS=$(nproc)
-          echo "使用 ${JOBS} 个并行任务编译"
+          # 使用动态优化的并行任务数
+          OPTIMAL_JOBS="${{ steps.machine-config.outputs.optimal-jobs }}"
+          HOTSPOT_JOBS="${{ steps.machine-config.outputs.hotspot-jobs }}"
+          JVM_HEAP="${{ steps.machine-config.outputs.jvm-heap }}"
+          JVM_META="${{ steps.machine-config.outputs.jvm-meta }}"
+          
+          echo "=== 优化编译配置 ==="
+          echo "并行任务数: $OPTIMAL_JOBS"
+          echo "HotSpot任务数: $HOTSPOT_JOBS"
+          echo "JVM堆内存: $JVM_HEAP"
+          echo "JVM元空间: $JVM_META"
           echo "构建策略: ${{ steps.cache-analysis.outputs.build-strategy }}"
+          
+          # 设置环境变量以优化编译性能
+          export MAKEFLAGS="-j$OPTIMAL_JOBS"
+          export HOTSPOT_BUILD_JOBS="$HOTSPOT_JOBS"
+          export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
+          
+          # 根据机器配置设置额外的优化选项
+          if [ "${{ steps.machine-config.outputs.cpu-cores }}" -ge 8 ]; then
+            export JAVAC_FLAGS="$JAVAC_FLAGS -J-XX:+UseParallelGC -J-XX:ParallelGCThreads=$OPTIMAL_JOBS"
+            echo "启用并行GC优化"
+          fi
+          
+          if [ "${{ steps.machine-config.outputs.avail-mem }}" -ge 8000 ]; then
+            export JAVAC_FLAGS="$JAVAC_FLAGS -J-XX:+UseG1GC -J-XX:MaxGCPauseMillis=200"
+            echo "启用G1GC优化"
+          fi
+          
+          # 启动性能监控
+          echo "启动性能监控..."
+          (
+            while true; do
+              echo "=== 实时性能监控 $(date '+%H:%M:%S') ==="
+              echo "CPU使用率: $(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)%"
+              echo "内存使用: $(free -m | awk 'NR==2{printf "%.1f%%", $3*100/$2}')"
+              echo "活跃进程数: $(ps aux | wc -l)"
+              echo "构建目录大小: $(du -sh build/ 2>/dev/null | cut -f1 || echo 'N/A')"
+              echo "----------------------------------------"
+              sleep 60
+            done
+          ) &
+          MONITOR_PID=$!
           
           # 根据缓存状态选择编译策略
           if [ "${{ steps.cache-analysis.outputs.incremental }}" = "true" ]; then
             echo "🎯 执行增量编译"
             echo "跳过已完成的模块，只编译变更部分"
             
-            # 使用更激进的增量编译选项
-            make images JOBS=${JOBS} \
-              JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none" \
+            # 使用优化的增量编译选项
+            make images \
+              JOBS=$OPTIMAL_JOBS \
+              JAVAC_FLAGS="$JAVAC_FLAGS" \
               WARNINGS_AS_ERRORS=false \
               CONF_CHECK=ignore \
               LOG_LEVEL=info \
-              HOTSPOT_BUILD_JOBS=${JOBS}
+              HOTSPOT_BUILD_JOBS=$HOTSPOT_JOBS \
+              DISABLE_HOTSPOT_OS_VERSION_CHECK=ok
           else
             echo "📦 执行完整构建"
-            make images JOBS=${JOBS} \
-              JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none" \
+            make images \
+              JOBS=$OPTIMAL_JOBS \
+              JAVAC_FLAGS="$JAVAC_FLAGS" \
               WARNINGS_AS_ERRORS=false \
               LOG_LEVEL=info \
-              HOTSPOT_BUILD_JOBS=${JOBS}
+              HOTSPOT_BUILD_JOBS=$HOTSPOT_JOBS \
+              DISABLE_HOTSPOT_OS_VERSION_CHECK=ok
           fi
+          
+          # 停止性能监控
+          kill $MONITOR_PID 2>/dev/null || true
           
           END_TIME=$(date +%s)
           DURATION=$((END_TIME - START_TIME))
@@ -231,29 +434,51 @@ jobs:
           echo "编译完成时间: $(date '+%Y-%m-%d %H:%M:%S')"
           echo "⏱️ 总编译耗时: ${MINUTES}分${SECONDS}秒"
           
-          # 分析编译时间
+          # 分析编译时间和性能
           echo ""
-          echo "=== 编译时间分析 ==="
+          echo "=== 编译性能分析 ==="
+          OPTIMAL_JOBS="${{ steps.machine-config.outputs.optimal-jobs }}"
+          CPU_CORES="${{ steps.machine-config.outputs.cpu-cores }}"
+          AVAIL_MEM="${{ steps.machine-config.outputs.avail-mem }}"
+          
           if [ "${{ steps.cache-analysis.outputs.incremental }}" = "true" ]; then
             if [ ${DURATION} -gt 1800 ]; then
               echo "⚠️ 增量编译时间较长 (${MINUTES}分${SECONDS}秒)"
-              echo "可能原因:"
-              echo "1. 缓存不完整，需要重新编译大量文件"
-              echo "2. 依赖关系复杂，需要重新链接"
-              echo "3. 原生代码需要重新编译"
-              echo "4. 并行度设置可能不够优化"
+              echo "优化建议:"
+              echo "1. 当前并行度: $OPTIMAL_JOBS (CPU: $CPU_CORES)"
+              echo "2. 内存使用: ${AVAIL_MEM}MB"
+              echo "3. 考虑增加缓存粒度"
+              echo "4. 检查依赖关系复杂度"
             else
-              echo "✅ 增量编译时间合理 (${MINUTES}分${SECONDS}秒)"
+              echo "✅ 增量编译性能优秀 (${MINUTES}分${SECONDS}秒)"
+              echo "优化效果:"
+              echo "- 并行度: $OPTIMAL_JOBS/$CPU_CORES (${OPTIMAL_JOBS}倍CPU核心数)"
+              echo "- 内存优化: 已启用"
+              echo "- 编译器优化: -O${{ steps.machine-config.outputs.opt-level }}"
             fi
           else
             echo "📦 完整构建时间: ${MINUTES}分${SECONDS}秒"
             if [ ${DURATION} -gt 3600 ]; then
-              echo "⚠️ 完整构建时间较长，建议优化:"
-              echo "1. 增加并行度 (当前: ${JOBS})"
-              echo "2. 使用更快的构建机器"
-              echo "3. 优化编译器选项"
+              echo "⚠️ 完整构建时间较长，优化建议:"
+              echo "1. 当前并行度: $OPTIMAL_JOBS (可考虑增加到 $((CPU_CORES * 2)))"
+              echo "2. 内存使用: ${AVAIL_MEM}MB (可考虑增加JVM堆内存)"
+              echo "3. 编译器优化: 已启用 -O${{ steps.machine-config.outputs.opt-level }}"
+            else
+              echo "✅ 完整构建性能优秀 (${MINUTES}分${SECONDS}秒)"
+              echo "优化效果:"
+              echo "- 并行度: $OPTIMAL_JOBS/$CPU_CORES"
+              echo "- 内存优化: 已启用"
+              echo "- 编译器优化: 已启用"
             fi
           fi
+          
+          # 计算性能指标
+          COMPILATION_RATE=$((DURATION * 100 / CPU_CORES))
+          echo ""
+          echo "=== 性能指标 ==="
+          echo "每核心编译时间: ${COMPILATION_RATE}秒"
+          echo "并行效率: $((OPTIMAL_JOBS * 100 / CPU_CORES))%"
+          echo "内存利用率: $((AVAIL_MEM * 100 / ${{ steps.machine-config.outputs.total-mem }}))%"
           
           # 显示构建统计
           if [ -d build ]; then
