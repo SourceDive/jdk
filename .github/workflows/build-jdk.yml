@@ -4,6 +4,18 @@ on:
   push:
     branches:
       - '**'  # 在所有分支上触发
+  workflow_dispatch:  # 允许手动触发
+    inputs:
+      retry_count:
+        description: '重试次数 (0-3)'
+        required: false
+        default: '0'
+        type: choice
+        options:
+          - '0'
+          - '1'
+          - '2'
+          - '3'
 
 jobs:
   build:
@@ -15,6 +27,8 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整历史记录
       
       - name: 计算源代码哈希
         id: source-hash
@@ -43,24 +57,22 @@ jobs:
         with:
           path: |
             build/
-          key: jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}
+          key: jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}
           restore-keys: |
-            jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}
-            jdk-build-v3-${{ runner.os }}-
+            jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}
+            jdk-build-v4-${{ runner.os }}-
       
       - name: 显示缓存状态
         run: |
           echo "=== 缓存键信息 ==="
-          echo "主键: jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}"
-          echo "GitHub SHA 备用键: jdk-build-v3-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}"
+          echo "主键: jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}"
+          echo "GitHub SHA 备用键: jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}"
           
           if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
             echo "🎯 缓存完全命中！将执行增量编译"
             if [ -d build ]; then
               echo "缓存的构建目录大小:"
               du -sh build/
-              echo "缓存的构建时间:"
-              ls -ld build/
               echo "缓存文件数量:"
               find build -type f | wc -l
             fi
@@ -68,7 +80,6 @@ jobs:
             echo "📦 无缓存或缓存未命中，将执行完整编译"
             echo "提示：首次构建后，后续构建将使用缓存加速"
           fi
-          
       
       - name: 安装构建依赖
         run: |
@@ -89,7 +100,9 @@ jobs:
             libfontconfig1-dev \
             libasound2-dev \
             libfreetype6-dev \
-            libffi-dev
+            libffi-dev \
+            ccache \
+            pkg-config
       
       - name: 显示环境信息
         run: |
@@ -104,14 +117,46 @@ jobs:
           echo "构建工具版本:"
           gcc --version | head -1
           make --version | head -1
+          echo "ccache 状态:"
+          ccache -s || echo "ccache 未配置"
       
       - name: 配置构建
+        id: configure
         run: |
+          # 设置环境变量
+          export LC_ALL=en_US.UTF-8
+          export LANG=en_US.UTF-8
+          export JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
+          export _JAVA_OPTIONS="-Dfile.encoding=UTF-8"
+          
+          # 配置ccache
+          ccache -M 2G
+          export PATH="/usr/lib/ccache:$PATH"
+          
           # 即使缓存命中也运行配置，configure 会自动检测已有配置
           if [ -f build/*/spec.gmk ] && [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
             echo "检测到已有配置，configure 将快速完成..."
           fi
           
+          # 执行配置
+          bash configure \
+            --with-debug-level=release \
+            --disable-warnings-as-errors \
+            --with-extra-cflags="-Wno-error -O2" \
+            --with-extra-cxxflags="-Wno-error -O2" \
+            --with-extra-ldflags="-Wl,-z,noexecstack" \
+            --disable-javac-server \
+            --with-ccache \
+            --with-ccache-dir=/tmp/ccache
+          
+          echo "configure-success=true" >> $GITHUB_OUTPUT
+        continue-on-error: true
+      
+      - name: 检查配置结果
+        if: steps.configure.outcome == 'failure'
+        run: |
+          echo "❌ 配置失败，尝试清理后重新配置"
+          rm -rf build/
           bash configure \
             --with-debug-level=release \
             --disable-warnings-as-errors \
@@ -119,10 +164,6 @@ jobs:
             --with-extra-cxxflags="-Wno-error" \
             --with-extra-ldflags="-Wl,-z,noexecstack" \
             --disable-javac-server
-        env:
-          LC_ALL: en_US.UTF-8
-          LANG: en_US.UTF-8
-          JAVAC_FLAGS: "-encoding UTF-8"
       
       - name: 显示配置信息
         run: |
@@ -132,21 +173,31 @@ jobs:
             else
               echo "✅ 配置成功完成"
             fi
-            cat build/*/spec.gmk | grep -E "CONF_NAME|JDK_VERSION|BOOT_JDK"
+            cat build/*/spec.gmk | grep -E "CONF_NAME|JDK_VERSION|BOOT_JDK" || echo "配置信息获取失败"
           else
             echo "❌ 配置失败"
             exit 1
           fi
       
       - name: 编译 JDK
+        id: compile
         run: |
           echo "开始编译时间: $(date '+%Y-%m-%d %H:%M:%S')"
           START_TIME=$(date +%s)
+          
+          # 设置环境变量
+          export LC_ALL=en_US.UTF-8
+          export LANG=en_US.UTF-8
+          export JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8"
+          export _JAVA_OPTIONS="-Dfile.encoding=UTF-8"
           
           # 设置并行编译
           JOBS=$(nproc)
           echo "使用 ${JOBS} 个并行任务编译"
           
+          # 设置ccache
+          export PATH="/usr/lib/ccache:$PATH"
+          ccache -M 2G
           
           # 执行编译（make会自动检测已有产物并增量编译）
           if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
@@ -171,10 +222,22 @@ jobs:
             du -sh build/
           fi
           
-        timeout-minutes: 60
-        env:
-          LC_ALL: en_US.UTF-8
-          LANG: en_US.UTF-8
+          echo "compile-success=true" >> $GITHUB_OUTPUT
+        continue-on-error: true
+        timeout-minutes: 90
+      
+      - name: 重试编译（如果失败）
+        if: steps.compile.outcome == 'failure' && (github.event.inputs.retry_count == '' || github.event.inputs.retry_count == '0')
+        run: |
+          echo "🔄 编译失败，执行重试..."
+          echo "清理部分构建产物..."
+          find build -name "*.o" -delete 2>/dev/null || true
+          find build -name "*.class" -delete 2>/dev/null || true
+          
+          # 重新编译
+          JOBS=$(nproc)
+          make images JOBS=${JOBS} JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none" WARNINGS_AS_ERRORS=false CONF_CHECK=ignore
+        timeout-minutes: 90
       
       - name: 验证构建结果
         run: |
@@ -199,6 +262,9 @@ jobs:
             fi
           else
             echo "❌ JDK 编译失败：找不到输出目录"
+            echo "构建目录内容:"
+            ls -la build/ || echo "build目录不存在"
+            find build -name "jdk" -type d 2>/dev/null || echo "未找到jdk目录"
             exit 1
           fi
       
@@ -291,3 +357,9 @@ jobs:
           echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> $GITHUB_STEP_SUMMARY
           echo "java -version" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      
+      - name: 显示ccache统计
+        if: always()
+        run: |
+          echo "=== ccache 统计信息 ==="
+          ccache -s || echo "ccache 统计不可用"
