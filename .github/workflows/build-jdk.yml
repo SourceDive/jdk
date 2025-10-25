@@ -39,7 +39,7 @@ jobs:
       
       - name: 恢复构建缓存
         id: cache-build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             build/
