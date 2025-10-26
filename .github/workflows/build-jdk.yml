@@ -290,7 +290,6 @@ jobs:
           LANG: en_US.UTF-8
           JAVAC_FLAGS: "-encoding UTF-8"
           # 设置JVM参数以优化编译性能
-          MAKEFLAGS: "-j${{ steps.machine-config.outputs.optimal-jobs }}"
           HOTSPOT_BUILD_JOBS: "${{ steps.machine-config.outputs.hotspot-jobs }}"
           # 设置编译器优化级别
           CFLAGS: "-O${{ steps.machine-config.outputs.opt-level }} -march=native -mtune=native"
@@ -385,8 +384,9 @@ jobs:
           fi
           
           # 设置Make优化选项
-          export MAKEFLAGS="-j${{ steps.machine-config.outputs.optimal-jobs }} -O"
-          export MAKE_OPTS="-j${{ steps.machine-config.outputs.optimal-jobs }}"
+          # 注意：JDK构建系统不支持MAKEFLAGS中的-j参数，使用JOBS环境变量
+          # 设置Make优化选项（不使用-j参数）
+          export MAKE_OPTS="-O"
           
           # 创建构建缓存目录
           mkdir -p .buildcache
@@ -395,7 +395,7 @@ jobs:
           echo "=== 优化配置完成 ==="
           echo "编译器: $CC"
           echo "链接器标志: $LDFLAGS"
-          echo "Make选项: $MAKEFLAGS"
+          echo "Make选项: $MAKE_OPTS"
           echo "构建缓存: $BUILD_CACHE_DIR"
       
       - name: 编译 JDK
@@ -417,7 +417,7 @@ jobs:
           echo "构建策略: ${{ steps.cache-analysis.outputs.build-strategy }}"
           
           # 设置环境变量以优化编译性能
-          export MAKEFLAGS="-j$OPTIMAL_JOBS"
+          # 注意：JDK构建系统不支持MAKEFLAGS中的-j参数，使用JOBS环境变量
           export HOTSPOT_BUILD_JOBS="$HOTSPOT_JOBS"
           export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
           
