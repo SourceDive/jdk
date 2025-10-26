@@ -769,14 +769,51 @@ jobs:
           retention-days: 30
           compression-level: 6
       
+      - name: 收集构建日志
+        if: always()
+        run: |
+          echo "=== 收集构建日志 ==="
+          mkdir -p build-logs
+          
+          # 查找并复制global.log
+          if find build -name "global.log" -type f 2>/dev/null | head -1 | xargs -I {} cp {} build-logs/ 2>/dev/null; then
+            echo "✅ 找到并复制了global.log"
+          else
+            echo "⚠️ 未找到global.log文件"
+          fi
+          
+          # 查找并复制configure.log
+          if find build -name "configure.log" -type f 2>/dev/null | head -1 | xargs -I {} cp {} build-logs/ 2>/dev/null; then
+            echo "✅ 找到并复制了configure.log"
+          else
+            echo "⚠️ 未找到configure.log文件"
+          fi
+          
+          # 查找并复制其他可能的日志文件
+          if find build -name "*.log" -type f 2>/dev/null | head -5 | xargs -I {} cp {} build-logs/ 2>/dev/null; then
+            echo "✅ 复制了其他构建日志文件"
+          fi
+          
+          # 如果存在configure.log，也复制一份
+          if [ -f configure.log ]; then
+            cp configure.log build-logs/configure.log
+            echo "✅ 复制了根目录的configure.log"
+          fi
+          
+          # 显示收集到的日志文件
+          if [ "$(ls -A build-logs 2>/dev/null)" ]; then
+            echo "收集到的日志文件:"
+            ls -la build-logs/
+          else
+            echo "⚠️ 没有找到任何构建日志文件"
+          fi
+      
       - name: 上传构建日志
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && hashFiles('build-logs/**') != ''
         with:
           name: build-logs-${{ steps.source-hash.outputs.hash }}
-          path: |
-            build/*/support/global.log
-            build/*/support/configure.log
+          path: build-logs/
           retention-days: 7
           compression-level: 6
 
