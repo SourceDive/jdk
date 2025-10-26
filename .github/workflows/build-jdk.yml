@@ -208,6 +208,7 @@ jobs:
           uname -a
       
       - name: 配置构建
+        id: configure-build
         run: |
           # 即使缓存命中也运行配置，configure 会自动检测已有配置
           if [ -f build/*/spec.gmk ] && [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
@@ -223,9 +224,9 @@ jobs:
           # 构建优化的configure参数
           CONFIGURE_ARGS="--with-debug-level=release"
           CONFIGURE_ARGS="$CONFIGURE_ARGS --disable-warnings-as-errors"
-          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-cflags=\"-Wno-error -O${{ steps.machine-config.outputs.opt-level }} ${{ steps.machine-config.outputs.lto-flags }}\""
-          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-cxxflags=\"-Wno-error -O${{ steps.machine-config.outputs.opt-level }} ${{ steps.machine-config.outputs.lto-flags }}\""
-          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-ldflags=\"-Wl,-z,noexecstack ${{ steps.machine-config.outputs.lto-flags }}\""
+          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-cflags=\"-Wno-error\""
+          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-cxxflags=\"-Wno-error\""
+          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-ldflags=\"-Wl,-z,noexecstack\""
           CONFIGURE_ARGS="$CONFIGURE_ARGS --disable-javac-server"
           
           # 根据机器配置添加额外优化
@@ -238,7 +239,52 @@ jobs:
           echo "将使用环境变量设置内存优化"
           
           echo "执行配置命令: bash configure $CONFIGURE_ARGS"
-          bash configure $CONFIGURE_ARGS
+          
+          # 执行configure并自动重试
+          CONFIGURE_ATTEMPTS=0
+          MAX_CONFIGURE_ATTEMPTS=3
+          
+          while [ $CONFIGURE_ATTEMPTS -lt $MAX_CONFIGURE_ATTEMPTS ]; do
+            CONFIGURE_ATTEMPTS=$((CONFIGURE_ATTEMPTS + 1))
+            echo "=== Configure 尝试 $CONFIGURE_ATTEMPTS/$MAX_CONFIGURE_ATTEMPTS ==="
+            
+            if bash configure $CONFIGURE_ARGS 2>&1 | tee /tmp/configure_output.log; then
+              echo "configure-success=true" >> $GITHUB_OUTPUT
+              echo "✅ 配置成功完成"
+              break
+            else
+              echo "❌ Configure 失败，分析错误..."
+              
+              # 分析错误类型
+              if grep -q "unrecognized option" /tmp/configure_output.log; then
+                echo "检测到 configure 选项错误，修复中..."
+                # 使用最简化的配置
+                CONFIGURE_ARGS="--with-debug-level=release --disable-warnings-as-errors --disable-javac-server"
+                echo "使用简化配置: $CONFIGURE_ARGS"
+              elif grep -q "Permission denied" /tmp/configure_output.log; then
+                echo "检测到权限错误，修复中..."
+                chmod +x configure
+                chmod +x make/autoconf/configure
+              elif grep -q "autoconf" /tmp/configure_output.log && grep -q "not found" /tmp/configure_output.log; then
+                echo "检测到依赖错误，安装 autoconf..."
+                apt-get update && apt-get install -y autoconf
+              else
+                echo "未知错误，使用最简化配置重试..."
+                CONFIGURE_ARGS="--with-debug-level=release --disable-warnings-as-errors"
+              fi
+              
+              if [ $CONFIGURE_ATTEMPTS -eq $MAX_CONFIGURE_ATTEMPTS ]; then
+                echo "configure-success=false" >> $GITHUB_OUTPUT
+                echo "❌ 达到最大重试次数，配置失败"
+                echo "最后的错误输出:"
+                cat /tmp/configure_output.log
+                exit 1
+              else
+                echo "等待 5 秒后重试..."
+                sleep 5
+              fi
+            fi
+          done
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
@@ -246,6 +292,11 @@ jobs:
           # 设置JVM参数以优化编译性能
           MAKEFLAGS: "-j${{ steps.machine-config.outputs.optimal-jobs }}"
           HOTSPOT_BUILD_JOBS: "${{ steps.machine-config.outputs.hotspot-jobs }}"
+          # 设置编译器优化级别
+          CFLAGS: "-O${{ steps.machine-config.outputs.opt-level }} -march=native -mtune=native"
+          CXXFLAGS: "-O${{ steps.machine-config.outputs.opt-level }} -march=native -mtune=native"
+          # 设置链接器优化
+          LDFLAGS: "${{ steps.machine-config.outputs.lto-flags }}"
       
       - name: 显示配置信息
         run: |
@@ -652,7 +703,7 @@ jobs:
     name: 下载构件
     runs-on: ubuntu-latest
     needs: build
-    if: always()
+    if: success()
     
     steps:
       - name: 获取构建哈希
