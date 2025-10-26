@@ -808,6 +808,21 @@ jobs:
           path: downloaded-artifacts/
         continue-on-error: true
       
+      - name: 修复构件权限
+        run: |
+          if [ -d downloaded-artifacts ]; then
+            echo "修复下载构件的权限..."
+            # 给所有文件添加读取权限
+            find downloaded-artifacts -type f -exec chmod 644 {} \;
+            # 给所有目录添加执行权限
+            find downloaded-artifacts -type d -exec chmod 755 {} \;
+            # 给可执行文件添加执行权限
+            find downloaded-artifacts -name "java" -o -name "javac" -o -name "jar" -o -name "jarsigner" -o -name "keytool" -o -name "jps" -o -name "jstat" -o -name "jmap" -o -name "jstack" -o -name "jinfo" -o -name "jcmd" | xargs chmod 755
+            echo "✅ 权限修复完成"
+          else
+            echo "❌ 未找到下载的构件目录"
+          fi
+      
       - name: 显示下载的构件信息
         run: |
           echo "=== 下载的构件信息 ==="
@@ -824,10 +839,16 @@ jobs:
               cat downloaded-artifacts/build-info.txt
             fi
             echo ""
-            if [ -d downloaded-artifacts/jdk ]; then
-              echo "JDK版本信息:"
+          if [ -d downloaded-artifacts/jdk ]; then
+            echo "JDK版本信息:"
+            if [ -x downloaded-artifacts/jdk/bin/java ]; then
+              downloaded-artifacts/jdk/bin/java -version
+            else
+              echo "❌ java可执行文件权限不足，尝试修复..."
+              chmod +x downloaded-artifacts/jdk/bin/java
               downloaded-artifacts/jdk/bin/java -version
             fi
+          fi
           else
             echo "❌ 未找到下载的构件"
             echo "可能的原因:"
