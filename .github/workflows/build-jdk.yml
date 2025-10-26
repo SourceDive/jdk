@@ -399,6 +399,7 @@ jobs:
           echo "构建缓存: $BUILD_CACHE_DIR"
       
       - name: 编译 JDK
+        id: compile-jdk
         run: |
           echo "开始编译时间: $(date '+%Y-%m-%d %H:%M:%S')"
           START_TIME=$(date +%s)
@@ -421,15 +422,16 @@ jobs:
           export HOTSPOT_BUILD_JOBS="$HOTSPOT_JOBS"
           export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
           
-          # 根据机器配置设置额外的优化选项
-          if [ "${{ steps.machine-config.outputs.cpu-cores }}" -ge 8 ]; then
-            export JAVAC_FLAGS="$JAVAC_FLAGS -J-XX:+UseParallelGC -J-XX:ParallelGCThreads=$OPTIMAL_JOBS"
-            echo "启用并行GC优化"
-          fi
-          
+          # 根据机器配置设置GC优化选项（只选择一个GC避免冲突）
           if [ "${{ steps.machine-config.outputs.avail-mem }}" -ge 8000 ]; then
             export JAVAC_FLAGS="$JAVAC_FLAGS -J-XX:+UseG1GC -J-XX:MaxGCPauseMillis=200"
             echo "启用G1GC优化"
+          elif [ "${{ steps.machine-config.outputs.cpu-cores }}" -ge 8 ]; then
+            export JAVAC_FLAGS="$JAVAC_FLAGS -J-XX:+UseParallelGC -J-XX:ParallelGCThreads=$OPTIMAL_JOBS"
+            echo "启用并行GC优化"
+          else
+            export JAVAC_FLAGS="$JAVAC_FLAGS -J-XX:+UseSerialGC"
+            echo "使用串行GC"
           fi
           
           # 启动性能监控
@@ -448,29 +450,108 @@ jobs:
           MONITOR_PID=$!
           
           # 根据缓存状态选择编译策略
-          if [ "${{ steps.cache-analysis.outputs.incremental }}" = "true" ]; then
-            echo "🎯 执行增量编译"
-            echo "跳过已完成的模块，只编译变更部分"
+          COMPILE_SUCCESS=false
+          COMPILE_ATTEMPTS=0
+          MAX_COMPILE_ATTEMPTS=3
+          
+          while [ $COMPILE_ATTEMPTS -lt $MAX_COMPILE_ATTEMPTS ] && [ "$COMPILE_SUCCESS" = "false" ]; do
+            COMPILE_ATTEMPTS=$((COMPILE_ATTEMPTS + 1))
+            echo "=== 编译尝试 $COMPILE_ATTEMPTS/$MAX_COMPILE_ATTEMPTS ==="
             
-            # 使用优化的增量编译选项
-            make images \
-              JOBS=$OPTIMAL_JOBS \
-              JAVAC_FLAGS="$JAVAC_FLAGS" \
-              WARNINGS_AS_ERRORS=false \
-              CONF_CHECK=ignore \
-              LOG_LEVEL=info \
-              HOTSPOT_BUILD_JOBS=$HOTSPOT_JOBS \
-              DISABLE_HOTSPOT_OS_VERSION_CHECK=ok
-          else
-            echo "📦 执行完整构建"
-            make images \
-              JOBS=$OPTIMAL_JOBS \
-              JAVAC_FLAGS="$JAVAC_FLAGS" \
-              WARNINGS_AS_ERRORS=false \
-              LOG_LEVEL=info \
-              HOTSPOT_BUILD_JOBS=$HOTSPOT_JOBS \
-              DISABLE_HOTSPOT_OS_VERSION_CHECK=ok
-          fi
+            if [ "${{ steps.cache-analysis.outputs.incremental }}" = "true" ]; then
+              echo "🎯 执行增量编译"
+              echo "跳过已完成的模块，只编译变更部分"
+              
+              # 使用优化的增量编译选项
+              if make images \
+                JOBS=$OPTIMAL_JOBS \
+                JAVAC_FLAGS="$JAVAC_FLAGS" \
+                WARNINGS_AS_ERRORS=false \
+                CONF_CHECK=ignore \
+                LOG_LEVEL=info \
+                HOTSPOT_BUILD_JOBS=$HOTSPOT_JOBS \
+                DISABLE_HOTSPOT_OS_VERSION_CHECK=ok 2>&1 | tee /tmp/compile_output.log; then
+                COMPILE_SUCCESS=true
+                echo "✅ 编译成功完成"
+              else
+                echo "❌ 编译失败，分析错误..."
+                
+                # 分析错误类型并自动修复
+                if grep -q "Multiple garbage collectors selected" /tmp/compile_output.log; then
+                  echo "检测到GC冲突错误，修复中..."
+                  # 移除所有GC选项，使用默认GC
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
+                  echo "使用简化JAVAC_FLAGS: $JAVAC_FLAGS"
+                elif grep -q "OutOfMemoryError" /tmp/compile_output.log; then
+                  echo "检测到内存不足错误，调整内存设置..."
+                  # 减少内存使用
+                  JVM_HEAP="2g"
+                  JVM_META="512m"
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
+                  echo "调整内存设置: 堆=$JVM_HEAP, 元空间=$JVM_META"
+                elif grep -q "No space left on device" /tmp/compile_output.log; then
+                  echo "检测到磁盘空间不足，清理缓存..."
+                  # 清理构建缓存
+                  rm -rf build/*/support/classes
+                  rm -rf build/*/support/gensrc
+                  echo "已清理部分构建缓存"
+                else
+                  echo "未知错误，使用最简化配置重试..."
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none"
+                  OPTIMAL_JOBS=2
+                  HOTSPOT_JOBS=2
+                fi
+                
+                if [ $COMPILE_ATTEMPTS -eq $MAX_COMPILE_ATTEMPTS ]; then
+                  echo "❌ 达到最大重试次数，编译失败"
+                  echo "最后的错误输出:"
+                  cat /tmp/compile_output.log
+                  exit 1
+                else
+                  echo "等待 10 秒后重试..."
+                  sleep 10
+                fi
+              fi
+            else
+              echo "📦 执行完整构建"
+              if make images \
+                JOBS=$OPTIMAL_JOBS \
+                JAVAC_FLAGS="$JAVAC_FLAGS" \
+                WARNINGS_AS_ERRORS=false \
+                LOG_LEVEL=info \
+                HOTSPOT_BUILD_JOBS=$HOTSPOT_JOBS \
+                DISABLE_HOTSPOT_OS_VERSION_CHECK=ok 2>&1 | tee /tmp/compile_output.log; then
+                COMPILE_SUCCESS=true
+                echo "✅ 编译成功完成"
+              else
+                echo "❌ 编译失败，分析错误..."
+                # 同样的错误修复逻辑
+                if grep -q "Multiple garbage collectors selected" /tmp/compile_output.log; then
+                  echo "检测到GC冲突错误，修复中..."
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
+                elif grep -q "OutOfMemoryError" /tmp/compile_output.log; then
+                  echo "检测到内存不足错误，调整内存设置..."
+                  JVM_HEAP="2g"
+                  JVM_META="512m"
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
+                else
+                  echo "未知错误，使用最简化配置重试..."
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none"
+                  OPTIMAL_JOBS=2
+                  HOTSPOT_JOBS=2
+                fi
+                
+                if [ $COMPILE_ATTEMPTS -eq $MAX_COMPILE_ATTEMPTS ]; then
+                  echo "❌ 达到最大重试次数，编译失败"
+                  cat /tmp/compile_output.log
+                  exit 1
+                else
+                  echo "等待 10 秒后重试..."
+                  sleep 10
+                fi
+              fi
+            fi
+          done
           
           # 停止性能监控
           kill $MONITOR_PID 2>/dev/null || true
