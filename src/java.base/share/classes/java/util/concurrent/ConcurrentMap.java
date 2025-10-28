@@ -42,6 +42,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
+ * <p>提供线程安全的map.</p>
  * A {@link Map} providing thread safety and atomicity guarantees.
  *
  * <p>To maintain the specified guarantees, default implementations of

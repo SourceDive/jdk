@@ -535,6 +535,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     private static final float LOAD_FACTOR = 0.75f;
 
     /**
+     * <p>链表转树的阈值</p>
      * The bin count threshold for using a tree rather than list for a
      * bin.  Bins are converted to trees when adding an element to a
      * bin with at least this many nodes. The value must be greater
@@ -545,6 +546,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final int TREEIFY_THRESHOLD = 8;
 
     /**
+     * <p>树退化为链表的阈值</p>
      * The bin count threshold for untreeifying a (split) bin during a
      * resize operation. Should be less than TREEIFY_THRESHOLD, and at
      * most 6 to mesh with shrinkage detection under removal.
@@ -1012,13 +1014,19 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         int hash = spread(key.hashCode());
         int binCount = 0;
         for (Node<K,V>[] tab = table;;) {
-            Node<K,V> f; int n, i, fh; K fk; V fv;
+            Node<K,V> f; // firstNode
+            int n/*tableLength*/, i/*bucketIndex*/, fh/*firstNodeHash*/; K fk; V fv;
+
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
+
+            // 桶是否为空
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
                 if (casTabAt(tab, i, null, new Node<K,V>(hash, key, value)))
                     break;                   // no lock when adding to empty bin
             }
+
+            // 桶是否正在迁移
             else if ((fh = f.hash) == MOVED)
                 tab = helpTransfer(tab, f);
             else if (onlyIfAbsent // check first node without acquiring lock

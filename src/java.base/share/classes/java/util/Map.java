@@ -728,6 +728,8 @@ public interface Map<K, V> {
     }
 
     /**
+     * <p>键不存在则插入，返回null.
+     * 键存在则返回当前值，不会覆盖。</p>
      * If the specified key is not already associated with a value (or is mapped
      * to {@code null}) associates it with the given value and returns
      * {@code null}, else returns the current value.
