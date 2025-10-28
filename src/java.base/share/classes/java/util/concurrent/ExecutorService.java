@@ -39,6 +39,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
+ * <p>1、关闭线程池</p>
+ * <p>2、提交任务</p>
  * An {@link Executor} that provides methods to manage termination and
  * methods that can produce a {@link Future} for tracking progress of
  * one or more asynchronous tasks.
