@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 import jdk.internal.vm.annotation.ReservedStackAccess;
 
 /**
+ * <p>术语 reentrant: who has entered again.</p>
+ *
  * A reentrant mutual exclusion {@link Lock} with the same basic
  * behavior and semantics as the implicit monitor lock accessed using
  * {@code synchronized} methods and statements, but with extended
