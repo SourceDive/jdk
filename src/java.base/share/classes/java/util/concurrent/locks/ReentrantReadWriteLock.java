@@ -221,7 +221,7 @@ public class ReentrantReadWriteLock
     /** Inner class providing writelock */
     private final ReentrantReadWriteLock.WriteLock writerLock;
     /** Performs all synchronization mechanics */
-    final Sync sync;
+    final Sync sync; // 同步器
 
     /**
      * Creates a new {@code ReentrantReadWriteLock} with
@@ -926,7 +926,7 @@ public class ReentrantReadWriteLock
      */
     public static class WriteLock implements Lock, java.io.Serializable {
         private static final long serialVersionUID = -4992448646407690164L;
-        private final Sync sync;
+        private final Sync sync; // 同步器
 
         /**
          * Constructor for use by subclasses.

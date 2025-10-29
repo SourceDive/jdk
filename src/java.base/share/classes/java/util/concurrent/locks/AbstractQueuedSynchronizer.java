@@ -313,6 +313,7 @@ public abstract class AbstractQueuedSynchronizer
     protected AbstractQueuedSynchronizer() { }
 
     /**
+     * <p>等待队列结点类</p>
      * Wait queue node class.
      *
      * <p>The wait queue is a variant of a "CLH" (Craig, Landin, and
@@ -446,6 +447,7 @@ public abstract class AbstractQueuedSynchronizer
         volatile int waitStatus;
 
         /**
+         * <p>当前结点的上一个结点</p>
          * Link to predecessor node that current node/thread relies on
          * for checking waitStatus. Assigned during enqueuing, and nulled
          * out (for sake of GC) only upon dequeuing.  Also, upon
@@ -459,6 +461,7 @@ public abstract class AbstractQueuedSynchronizer
         volatile Node prev;
 
         /**
+         * <p>当前结点的下一个结点</p>
          * Link to the successor node that the current node/thread
          * unparks upon release. Assigned during enqueuing, adjusted
          * when bypassing cancelled predecessors, and nulled out (for
@@ -561,6 +564,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>等待队列头部</p>
      * Head of the wait queue, lazily initialized.  Except for
      * initialization, it is modified only via method setHead.  Note:
      * If head exists, its waitStatus is guaranteed not to be
@@ -569,6 +573,7 @@ public abstract class AbstractQueuedSynchronizer
     private transient volatile Node head;
 
     /**
+     * <p>等待队列尾部</p>
      * Tail of the wait queue, lazily initialized.  Modified only via
      * method enq to add new wait node.
      */
@@ -1227,6 +1232,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>以排他模式获取锁。</p>
      * Acquires in exclusive mode, ignoring interrupts.  Implemented
      * by invoking at least once {@link #tryAcquire},
      * returning on success.  Otherwise the thread is queued, possibly
@@ -1509,6 +1515,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>查看等待队列是否已有等待的线程。</p>
      * Queries whether any threads have been waiting to acquire longer
      * than the current thread.
      *

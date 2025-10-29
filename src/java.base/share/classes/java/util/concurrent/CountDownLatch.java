@@ -187,7 +187,7 @@ public class CountDownLatch {
         }
     }
 
-    private final Sync sync;
+    private final Sync sync; // 同步器
 
     /**
      * Constructs a {@code CountDownLatch} initialized with the given count.
