@@ -213,6 +213,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         protected final boolean tryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
             int c = getState();
+
+            // 如果锁空闲，设置当前线程。
             if (c == 0) {
                 if (!hasQueuedPredecessors() &&
                     compareAndSetState(0, acquires)) {
@@ -220,11 +222,12 @@ public class ReentrantLock implements Lock, java.io.Serializable {
                     return true;
                 }
             }
+            // 锁已被当前线程持有。
             else if (current == getExclusiveOwnerThread()) {
                 int nextc = c + acquires;
                 if (nextc < 0)
                     throw new Error("Maximum lock count exceeded");
-                setState(nextc);
+                setState(nextc); // 设置重入次数。
                 return true;
             }
             return false;
@@ -255,6 +258,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * <p>Acquires the lock if it is not held by another thread and returns
      * immediately, setting the lock hold count to one.
      *
+     * <p>如果当前线程已持有锁，则计数+1后立即返回。</p>
      * <p>If the current thread already holds the lock then the hold
      * count is incremented by one and the method returns immediately.
      *

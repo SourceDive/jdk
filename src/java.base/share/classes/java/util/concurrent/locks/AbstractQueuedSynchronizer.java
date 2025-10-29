@@ -575,7 +575,10 @@ public abstract class AbstractQueuedSynchronizer
     private transient volatile Node tail;
 
     /**
+     * <p>同步状态</p>
      * The synchronization state.
+     * <p>0: 锁空闲</p>
+     * <p>>0: 被持有，并且表示重入次数。</p>
      */
     private volatile int state;
 

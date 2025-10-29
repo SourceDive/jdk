@@ -167,6 +167,7 @@ public class Semaphore implements java.io.Serializable {
     private final Sync sync;
 
     /**
+     * <p>这里使用AQS的state来表示许可证数量。</p>
      * Synchronization implementation for semaphore.  Uses AQS state
      * to represent permits. Subclassed into fair and nonfair
      * versions.
