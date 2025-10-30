@@ -924,6 +924,7 @@ public interface Map<K, V> {
     }
 
     /**
+     * <p>如果指定的key没有关联的value，那就用给定的function计算，并且put(key, value)。</p>
      * If the specified key is not already associated with a value (or is mapped
      * to {@code null}), attempts to compute its value using the given mapping
      * function and enters it into this map unless {@code null}.
@@ -983,6 +984,7 @@ public interface Map<K, V> {
      * @param mappingFunction the mapping function to compute a value
      * @return the current (existing or computed) value associated with
      *         the specified key, or null if the computed value is null
+     *         <p>返回当前和key关联的value或者算出的value。</p>
      * @throws NullPointerException if the specified key is null and
      *         this map does not support null keys, or the mappingFunction
      *         is null
