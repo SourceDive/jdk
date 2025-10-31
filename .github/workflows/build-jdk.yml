@@ -221,9 +221,7 @@ jobs:
           echo \"JVM堆内存: ${{ steps.machine-config.outputs.jvm-heap }}\"
           
           # 构建优化的configure参数
-          CONFIGURE_ARGS=\"--with-debug-level=release\"
-          CONFIGURE_ARGS=\"$CONFIGURE_ARGS --disable-warnings-as-errors\"
-          CONFIGURE_ARGS=\"$CONFIGURE_ARGS --disable-javac-server\"
+          CONFIGURE_ARGS=\"--with-debug-level=release --disable-warnings-as-errors --disable-javac-server\"
           
           # 根据机器配置添加额外优化
           if [ \"${{ steps.machine-config.outputs.cpu-cores }}\" -ge 8 ]; then
@@ -256,11 +254,11 @@ jobs:
               elif grep -q \"Permission denied\" /tmp/configure_output.log; then
                 echo \"检测到权限错误，修复中...\"
                 chmod +x configure
-                chmod +x make/autoconf/configure
+                chmod +x make/autoconf/configure || true
               elif grep -q \"C compiler cannot create executables\" /tmp/configure_output.log; then
                 echo \"检测到编译器问题，清除环境变量并重试...\"
                 CONFIGURE_ARGS=\"--with-debug-level=release --disable-warnings-as-errors\"
-                unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS
+                unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS || true
               elif grep -q \"autoconf\" /tmp/configure_output.log && grep -q \"not found\" /tmp/configure_output.log; then
                 echo \"检测到依赖错误，安装 autoconf...\"
                 apt-get update && apt-get install -y autoconf
