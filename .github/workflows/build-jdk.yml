@@ -222,7 +222,6 @@ jobs:
       
       - name: 显示配置信息
         run: |
-        run: |
           if [ -f build/*/spec.gmk ]; then
             if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
               echo "✅ 使用缓存的配置"
