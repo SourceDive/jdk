@@ -182,6 +182,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     /**
+     * <p>语义: acquire</p>
      * @throws CancellationException {@inheritDoc}
      */
     public V get() throws InterruptedException, ExecutionException {

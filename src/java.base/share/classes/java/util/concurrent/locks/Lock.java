@@ -169,6 +169,7 @@ import java.util.concurrent.TimeUnit;
 public interface Lock {
 
     /**
+     * <p>语义: acquire</p>
      * <p>阻塞直到成功。</p>
      * <p>当前线程如果可以获得锁，则立即返回。</p>
      * <p>当前线程如果获得不到，则阻塞，直到获得为止。</p>

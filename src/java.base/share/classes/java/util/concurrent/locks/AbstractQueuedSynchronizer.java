@@ -43,6 +43,7 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * <p>抽象队列同步器</p>
  * Provides a framework for implementing blocking locks and related
  * synchronizers (semaphores, events, etc) that rely on
  * first-in-first-out (FIFO) wait queues.  This class is designed to

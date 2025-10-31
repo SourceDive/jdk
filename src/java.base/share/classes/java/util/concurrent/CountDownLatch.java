@@ -38,6 +38,7 @@ package java.util.concurrent;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
+ * <p>可以使一个或多个线程等待</p>
  * A synchronization aid that allows one or more threads to wait until
  * a set of operations being performed in other threads completes.
  *
@@ -202,6 +203,7 @@ public class CountDownLatch {
     }
 
     /**
+     * <p>语义: acquire</p>
      * Causes the current thread to wait until the latch has counted down to
      * zero, unless the thread is {@linkplain Thread#interrupt interrupted}.
      *
@@ -279,6 +281,7 @@ public class CountDownLatch {
     }
 
     /**
+     * <p>如果count为0,则释放所有等待的线程.</p>
      * Decrements the count of the latch, releasing all waiting threads if
      * the count reaches zero.
      *
