@@ -10,7 +10,7 @@ jobs:
     name: 编译 JDK
     runs-on: ubuntu-latest
     container:
-      image: adoptopenjdk/openjdk11:x86_64-ubuntu-jdk-11.0.11_9
+      image: eclipse-temurin:11-jdk
     outputs:
       source-hash: ${{ steps.source-hash.outputs.hash }}
       build-success: ${{ steps.verify-build.outputs.success }}
@@ -621,7 +621,7 @@ jobs:
             find build -name "images" -type d -exec du -sh {} \; | head -5
           fi
           
-        timeout-minutes: 60
+        timeout-minutes: 180
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
