@@ -226,6 +226,9 @@ jobs:
       - name: 配置构建
         id: configure-build
         run: |
+          # 清除可能干扰configure的环境变量
+          unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS || true
+          
           # 即使缓存命中也运行配置，configure 会自动检测已有配置
           if [ -f build/*/spec.gmk ] && [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
             echo "检测到已有配置，configure 将快速完成..."
