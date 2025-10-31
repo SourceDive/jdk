@@ -528,13 +528,22 @@ jobs:
             fi
           fi
           
-          # 计算性能指标
-          COMPILATION_RATE=$((DURATION * 100 / CPU_CORES))
-          echo ""
-          echo "=== 性能指标 ==="
-          echo "每核心编译时间: ${COMPILATION_RATE}秒"
-          echo "并行效率: $((OPTIMAL_JOBS * 100 / CPU_CORES))%"
-          echo "内存利用率: $((AVAIL_MEM * 100 / ${{ steps.machine-config.outputs.total-mem }}))%"
+          # 计算性能指标（添加安全检查避免除零）
+          if [ -n "$CPU_CORES" ] && [ "$CPU_CORES" -gt 0 ]; then
+            COMPILATION_RATE=$((DURATION * 100 / CPU_CORES))
+            echo ""
+            echo "=== 性能指标 ==="
+            echo "每核心编译时间: ${COMPILATION_RATE}秒"
+            echo "并行效率: $((OPTIMAL_JOBS * 100 / CPU_CORES))%"
+          else
+            echo ""
+            echo "=== 性能指标 ==="
+            echo "⚠️ CPU核心数信息不可用，跳过相关计算"
+            COMPILATION_RATE=0
+          fi
+          if [ -n "${{ steps.machine-config.outputs.total-mem }}" ] && [ "${{ steps.machine-config.outputs.total-mem }}" -gt 0 ]; then
+            echo "内存利用率: $((AVAIL_MEM * 100 / ${{ steps.machine-config.outputs.total-mem }}))%"
+          fi
           
           # 显示构建统计
           if [ -d build ]; then
