@@ -179,7 +179,30 @@ jobs:
             JVM_META="256m"
           fi
           
-          LDFLAGS: "${{ steps.machine-config.outputs.lto-flags }}"
+          echo ""
+          echo "=== 优化参数计算 ==="
+          echo "最优并行任务数: $OPTIMAL_JOBS"
+          echo "HotSpot并行任务数: $HOTSPOT_JOBS"
+          echo "JVM堆内存: $JVM_HEAP"
+          echo "JVM元空间: $JVM_META"
+          
+          # 输出到GitHub Actions
+          echo "optimal-jobs=$OPTIMAL_JOBS" >> $GITHUB_OUTPUT
+          echo "hotspot-jobs=$HOTSPOT_JOBS" >> $GITHUB_OUTPUT
+          echo "jvm-heap=$JVM_HEAP" >> $GITHUB_OUTPUT
+          echo "jvm-meta=$JVM_META" >> $GITHUB_OUTPUT
+          
+          echo ""
+          echo "=== 环境详细信息 ==="
+          echo "Java 版本:"
+          java -version
+          echo ""
+          echo "构建工具版本:"
+          gcc --version | head -1
+          make --version | head -1
+          echo ""
+          echo "系统信息:"
+          uname -a
       
       - name: 显示配置信息
         run: |
