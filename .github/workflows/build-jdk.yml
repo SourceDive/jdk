@@ -9,9 +9,6 @@ jobs:
   build:
     name: 编译 JDK
     runs-on: ubuntu-latest
-    container:
-      image: eclipse-temurin:11-jdk
-      options: --privileged
     outputs:
       source-hash: ${{ steps.source-hash.outputs.hash }}
       build-success: ${{ steps.verify-build.outputs.success }}
@@ -92,8 +89,9 @@ jobs:
       
       - name: 安装构建依赖
         run: |
-          apt-get update
-          apt-get install -y \
+          sudo apt-get update
+          sudo apt-get install -y \
+            openjdk-11-jdk \
             build-essential \
             autoconf \
             zip \
@@ -122,6 +120,11 @@ jobs:
           echo 'int main(){return 0;}' > /tmp/test.c
           gcc /tmp/test.c -o /tmp/test && /tmp/test && echo "✅ 编译器测试通过" || echo "❌ 编译器测试失败"
           rm -f /tmp/test.c /tmp/test
+          
+          # 设置JAVA_HOME
+          export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+          echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
+          java -version
       
       - name: 分析机器配置并优化编译参数
         id: machine-config
