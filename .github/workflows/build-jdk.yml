@@ -210,84 +210,15 @@ jobs:
           # 清除可能干扰configure的环境变量
           unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS || true
           
-          # 即使缓存命中也运行配置，configure 会自动检测已有配置
-          if [ -f build/*/spec.gmk ] && [ \"${{ steps.cache-build.outputs.cache-hit }}\" = \"true\" ]; then
-            echo \"检测到已有配置，configure 将快速完成...\"
-          fi
+          # 执行configure
+          bash configure --with-debug-level=release --disable-warnings-as-errors
           
-          echo \"=== 使用优化的构建配置 ===\"
-          echo \"并行任务数: ${{ steps.machine-config.outputs.optimal-jobs }}\"
-          echo \"HotSpot任务数: ${{ steps.machine-config.outputs.hotspot-jobs }}\"
-          echo \"JVM堆内存: ${{ steps.machine-config.outputs.jvm-heap }}\"
-          
-          # 构建优化的configure参数
-          CONFIGURE_ARGS=\"--with-debug-level=release --disable-warnings-as-errors --disable-javac-server\"
-          
-          # 根据机器配置添加额外优化
-          if [ \"${{ steps.machine-config.outputs.cpu-cores }}\" -ge 8 ]; then
-            CONFIGURE_ARGS=\"$CONFIGURE_ARGS --with-jobs=${{ steps.machine-config.outputs.optimal-jobs }}\"
-            echo \"启用高并行度构建\"
-          fi
-          
-          echo \"执行配置命令: bash configure $CONFIGURE_ARGS\"
-          
-          # 执行configure并自动重试
-          CONFIGURE_ATTEMPTS=0
-          MAX_CONFIGURE_ATTEMPTS=3
-          
-          while [ $CONFIGURE_ATTEMPTS -lt $MAX_CONFIGURE_ATTEMPTS ]; do
-            CONFIGURE_ATTEMPTS=$((CONFIGURE_ATTEMPTS + 1))
-            echo \"=== Configure 尝试 $CONFIGURE_ATTEMPTS/$MAX_CONFIGURE_ATTEMPTS ===\"
-            
-            if bash configure $CONFIGURE_ARGS 2>&1 | tee /tmp/configure_output.log; then
-              echo \"configure-success=true\" >> $GITHUB_OUTPUT
-              echo \"✅ 配置成功完成\"
-              break
-            else
-              echo \"❌ Configure 失败，分析错误...\"
-              
-              # 分析错误类型
-              if grep -q \"unrecognized option\" /tmp/configure_output.log; then
-                echo \"检测到 configure 选项错误，修复中...\"
-                CONFIGURE_ARGS=\"--with-debug-level=release --disable-warnings-as-errors --disable-javac-server\"
-                echo \"使用简化配置: $CONFIGURE_ARGS\"
-              elif grep -q \"Permission denied\" /tmp/configure_output.log; then
-                echo \"检测到权限错误，修复中...\"
-                chmod +x configure
-                chmod +x make/autoconf/configure || true
-              elif grep -q \"C compiler cannot create executables\" /tmp/configure_output.log; then
-                echo \"检测到编译器问题，清除环境变量并重试...\"
-                CONFIGURE_ARGS=\"--with-debug-level=release --disable-warnings-as-errors\"
-                unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS || true
-              elif grep -q \"autoconf\" /tmp/configure_output.log && grep -q \"not found\" /tmp/configure_output.log; then
-                echo \"检测到依赖错误，安装 autoconf...\"
-                apt-get update && apt-get install -y autoconf
-              else
-                echo \"未知错误，使用最简化配置重试...\"
-                CONFIGURE_ARGS=\"--with-debug-level=release --disable-warnings-as-errors\"
-              fi
-              
-              if [ $CONFIGURE_ATTEMPTS -eq $MAX_CONFIGURE_ATTEMPTS ]; then
-                echo \"configure-success=false\" >> $GITHUB_OUTPUT
-                echo \"❌ 达到最大重试次数，配置失败\"
-                echo \"最后的错误输出:\"
-                cat /tmp/configure_output.log
-                exit 1
-              else
-                echo \"等待 5 秒后重试...\"
-                sleep 5
-              fi
-            fi
-          done
+          echo "configure-success=true" >> $GITHUB_OUTPUT
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
-          JAVAC_FLAGS: \"-encoding UTF-8\"
-          # 设置JVM参数以优化编译性能
-          HOTSPOT_BUILD_JOBS: \"${{ steps.machine-config.outputs.hotspot-jobs }}\"
-          # 不再设置CFLAGS/CXXFLAGS，让configure自己处理，避免编译器测试失败
-      
-      - name: 显示配置信息
+          JAVAC_FLAGS: "-encoding UTF-8"
+          HOTSPOT_BUILD_JOBS: "${{ steps.machine-config.outputs.hotspot-jobs }}"
         run: |
           if [ -f build/*/spec.gmk ]; then
             if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
