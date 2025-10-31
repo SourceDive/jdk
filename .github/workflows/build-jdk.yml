@@ -10,7 +10,7 @@ jobs:
     name: 编译 JDK
     runs-on: ubuntu-latest
     container:
-      image: adoptopenjdk/openjdk11:x86_64-ubuntu-jdk-11.0.11_9
+      image: eclipse-temurin:11-jdk-jammy
     outputs:
       source-hash: ${{ steps.source-hash.outputs.hash }}
       build-success: ${{ steps.verify-build.outputs.success }}
@@ -90,9 +90,20 @@ jobs:
           
       
       - name: 安装构建依赖
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
-          apt-get update
-          apt-get install -y \
+          set -euxo pipefail
+          
+          # 旧版本基础镜像的APT源已经失效，改用 jammy 版本镜像后仍保留健壮性检查
+          if ! apt-get update; then
+            echo "⚠️ 首次 apt-get update 失败，尝试启用旧版源..."
+            sed -i 's|archive.ubuntu.com|old-releases.ubuntu.com|g' /etc/apt/sources.list
+            sed -i 's|security.ubuntu.com|old-releases.ubuntu.com|g' /etc/apt/sources.list
+            apt-get update
+          fi
+          
+          apt-get install -y --no-install-recommends \
             build-essential \
             autoconf \
             zip \
@@ -108,7 +119,11 @@ jobs:
             libfontconfig1-dev \
             libasound2-dev \
             libfreetype6-dev \
-            libffi-dev
+            libffi-dev \
+            pkg-config \
+            ccache \
+            procps
+          apt-get clean
       
       - name: 分析机器配置并优化编译参数
         id: machine-config
@@ -621,7 +636,7 @@ jobs:
             find build -name "images" -type d -exec du -sh {} \; | head -5
           fi
           
-        timeout-minutes: 60
+        timeout-minutes: 120
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
