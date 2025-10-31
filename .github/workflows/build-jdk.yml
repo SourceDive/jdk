@@ -219,7 +219,8 @@ jobs:
           LANG: en_US.UTF-8
           JAVAC_FLAGS: "-encoding UTF-8"
           HOTSPOT_BUILD_JOBS: "${{ steps.machine-config.outputs.hotspot-jobs }}"
-        run: |
+      
+      - name: 显示配置信息
           if [ -f build/*/spec.gmk ]; then
             if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
               echo "✅ 使用缓存的配置"
