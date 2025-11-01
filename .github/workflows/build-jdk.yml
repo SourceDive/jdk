@@ -109,6 +109,18 @@ jobs:
             libasound2-dev \
             libfreetype6-dev \
             libffi-dev
+          
+          # 验证编译器安装
+          echo "验证编译器安装..."
+          gcc --version
+          g++ --version
+          which gcc
+          which g++
+          
+          # 测试编译器能否创建可执行文件
+          echo 'int main(){return 0;}' > /tmp/test.c
+          gcc /tmp/test.c -o /tmp/test && /tmp/test && echo "✅ 编译器测试通过" || echo "❌ 编译器测试失败"
+          rm -f /tmp/test.c /tmp/test
       
       - name: 分析机器配置并优化编译参数
         id: machine-config
@@ -167,33 +179,18 @@ jobs:
             JVM_META="256m"
           fi
           
-          # 设置编译器优化级别
-          if [ $CPU_CORES -ge 8 ]; then
-            OPT_LEVEL="3"
-            LTO_FLAGS="-flto"
-          else
-            OPT_LEVEL="2"
-            LTO_FLAGS=""
-          fi
-          
           echo ""
           echo "=== 优化参数计算 ==="
           echo "最优并行任务数: $OPTIMAL_JOBS"
           echo "HotSpot并行任务数: $HOTSPOT_JOBS"
           echo "JVM堆内存: $JVM_HEAP"
           echo "JVM元空间: $JVM_META"
-          echo "优化级别: -O$OPT_LEVEL"
           
           # 输出到GitHub Actions
           echo "optimal-jobs=$OPTIMAL_JOBS" >> $GITHUB_OUTPUT
           echo "hotspot-jobs=$HOTSPOT_JOBS" >> $GITHUB_OUTPUT
           echo "jvm-heap=$JVM_HEAP" >> $GITHUB_OUTPUT
           echo "jvm-meta=$JVM_META" >> $GITHUB_OUTPUT
-          echo "opt-level=$OPT_LEVEL" >> $GITHUB_OUTPUT
-          echo "lto-flags=$LTO_FLAGS" >> $GITHUB_OUTPUT
-          echo "cpu-cores=$CPU_CORES" >> $GITHUB_OUTPUT
-          echo "total-mem=$TOTAL_MEM" >> $GITHUB_OUTPUT
-          echo "avail-mem=$AVAIL_MEM" >> $GITHUB_OUTPUT
           
           echo ""
           echo "=== 环境详细信息 ==="
@@ -210,92 +207,18 @@ jobs:
       - name: 配置构建
         id: configure-build
         run: |
-          # 即使缓存命中也运行配置，configure 会自动检测已有配置
-          if [ -f build/*/spec.gmk ] && [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
-            echo "检测到已有配置，configure 将快速完成..."
-          fi
+          # 清除可能干扰configure的环境变量
+          unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS || true
           
-          echo "=== 使用优化的构建配置 ==="
-          echo "并行任务数: ${{ steps.machine-config.outputs.optimal-jobs }}"
-          echo "HotSpot任务数: ${{ steps.machine-config.outputs.hotspot-jobs }}"
-          echo "JVM堆内存: ${{ steps.machine-config.outputs.jvm-heap }}"
-          echo "优化级别: -O${{ steps.machine-config.outputs.opt-level }}"
+          # 执行configure
+          bash configure --with-debug-level=release --disable-warnings-as-errors
           
-          # 构建优化的configure参数
-          CONFIGURE_ARGS="--with-debug-level=release"
-          CONFIGURE_ARGS="$CONFIGURE_ARGS --disable-warnings-as-errors"
-          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-cflags=\"-Wno-error\""
-          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-cxxflags=\"-Wno-error\""
-          CONFIGURE_ARGS="$CONFIGURE_ARGS --with-extra-ldflags=\"-Wl,-z,noexecstack\""
-          CONFIGURE_ARGS="$CONFIGURE_ARGS --disable-javac-server"
-          
-          # 根据机器配置添加额外优化
-          if [ "${{ steps.machine-config.outputs.cpu-cores }}" -ge 8 ]; then
-            CONFIGURE_ARGS="$CONFIGURE_ARGS --with-jobs=${{ steps.machine-config.outputs.optimal-jobs }}"
-            echo "启用高并行度构建"
-          fi
-          
-          # 注意：--with-memory-size 不是有效的configure选项，移除它
-          echo "将使用环境变量设置内存优化"
-          
-          echo "执行配置命令: bash configure $CONFIGURE_ARGS"
-          
-          # 执行configure并自动重试
-          CONFIGURE_ATTEMPTS=0
-          MAX_CONFIGURE_ATTEMPTS=3
-          
-          while [ $CONFIGURE_ATTEMPTS -lt $MAX_CONFIGURE_ATTEMPTS ]; do
-            CONFIGURE_ATTEMPTS=$((CONFIGURE_ATTEMPTS + 1))
-            echo "=== Configure 尝试 $CONFIGURE_ATTEMPTS/$MAX_CONFIGURE_ATTEMPTS ==="
-            
-            if bash configure $CONFIGURE_ARGS 2>&1 | tee /tmp/configure_output.log; then
-              echo "configure-success=true" >> $GITHUB_OUTPUT
-              echo "✅ 配置成功完成"
-              break
-            else
-              echo "❌ Configure 失败，分析错误..."
-              
-              # 分析错误类型
-              if grep -q "unrecognized option" /tmp/configure_output.log; then
-                echo "检测到 configure 选项错误，修复中..."
-                # 使用最简化的配置
-                CONFIGURE_ARGS="--with-debug-level=release --disable-warnings-as-errors --disable-javac-server"
-                echo "使用简化配置: $CONFIGURE_ARGS"
-              elif grep -q "Permission denied" /tmp/configure_output.log; then
-                echo "检测到权限错误，修复中..."
-                chmod +x configure
-                chmod +x make/autoconf/configure
-              elif grep -q "autoconf" /tmp/configure_output.log && grep -q "not found" /tmp/configure_output.log; then
-                echo "检测到依赖错误，安装 autoconf..."
-                apt-get update && apt-get install -y autoconf
-              else
-                echo "未知错误，使用最简化配置重试..."
-                CONFIGURE_ARGS="--with-debug-level=release --disable-warnings-as-errors"
-              fi
-              
-              if [ $CONFIGURE_ATTEMPTS -eq $MAX_CONFIGURE_ATTEMPTS ]; then
-                echo "configure-success=false" >> $GITHUB_OUTPUT
-                echo "❌ 达到最大重试次数，配置失败"
-                echo "最后的错误输出:"
-                cat /tmp/configure_output.log
-                exit 1
-              else
-                echo "等待 5 秒后重试..."
-                sleep 5
-              fi
-            fi
-          done
+          echo "configure-success=true" >> $GITHUB_OUTPUT
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
           JAVAC_FLAGS: "-encoding UTF-8"
-          # 设置JVM参数以优化编译性能
           HOTSPOT_BUILD_JOBS: "${{ steps.machine-config.outputs.hotspot-jobs }}"
-          # 设置编译器优化级别
-          CFLAGS: "-O${{ steps.machine-config.outputs.opt-level }} -march=native -mtune=native"
-          CXXFLAGS: "-O${{ steps.machine-config.outputs.opt-level }} -march=native -mtune=native"
-          # 设置链接器优化
-          LDFLAGS: "${{ steps.machine-config.outputs.lto-flags }}"
       
       - name: 显示配置信息
         run: |
@@ -420,6 +343,7 @@ jobs:
           # 设置环境变量以优化编译性能
           # 注意：JDK构建系统不支持MAKEFLAGS中的-j参数，使用JOBS环境变量
           export HOTSPOT_BUILD_JOBS="$HOTSPOT_JOBS"
+          # 不再设置CFLAGS/CXXFLAGS，让configure自己处理，避免编译器测试失败
           export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
           
           # 根据机器配置设置GC优化选项（只选择一个GC避免冲突）
@@ -470,6 +394,7 @@ jobs:
                 CONF_CHECK=ignore \
                 LOG_LEVEL=info \
                 HOTSPOT_BUILD_JOBS=$HOTSPOT_JOBS \
+          # 不再设置CFLAGS/CXXFLAGS，让configure自己处理，避免编译器测试失败
                 DISABLE_HOTSPOT_OS_VERSION_CHECK=ok 2>&1 | tee /tmp/compile_output.log; then
                 COMPILE_SUCCESS=true
                 echo "✅ 编译成功完成"
@@ -520,6 +445,7 @@ jobs:
                 WARNINGS_AS_ERRORS=false \
                 LOG_LEVEL=info \
                 HOTSPOT_BUILD_JOBS=$HOTSPOT_JOBS \
+          # 不再设置CFLAGS/CXXFLAGS，让configure自己处理，避免编译器测试失败
                 DISABLE_HOTSPOT_OS_VERSION_CHECK=ok 2>&1 | tee /tmp/compile_output.log; then
                 COMPILE_SUCCESS=true
                 echo "✅ 编译成功完成"
@@ -602,13 +528,22 @@ jobs:
             fi
           fi
           
-          # 计算性能指标
-          COMPILATION_RATE=$((DURATION * 100 / CPU_CORES))
-          echo ""
-          echo "=== 性能指标 ==="
-          echo "每核心编译时间: ${COMPILATION_RATE}秒"
-          echo "并行效率: $((OPTIMAL_JOBS * 100 / CPU_CORES))%"
-          echo "内存利用率: $((AVAIL_MEM * 100 / ${{ steps.machine-config.outputs.total-mem }}))%"
+          # 计算性能指标（添加安全检查避免除零）
+          if [ -n "$CPU_CORES" ] && [ "$CPU_CORES" -gt 0 ]; then
+            COMPILATION_RATE=$((DURATION * 100 / CPU_CORES))
+            echo ""
+            echo "=== 性能指标 ==="
+            echo "每核心编译时间: ${COMPILATION_RATE}秒"
+            echo "并行效率: $((OPTIMAL_JOBS * 100 / CPU_CORES))%"
+          else
+            echo ""
+            echo "=== 性能指标 ==="
+            echo "⚠️ CPU核心数信息不可用，跳过相关计算"
+            COMPILATION_RATE=0
+          fi
+          if [ -n "${{ steps.machine-config.outputs.total-mem }}" ] && [ "${{ steps.machine-config.outputs.total-mem }}" -gt 0 ]; then
+            echo "内存利用率: $((AVAIL_MEM * 100 / ${{ steps.machine-config.outputs.total-mem }}))%"
+          fi
           
           # 显示构建统计
           if [ -d build ]; then
@@ -621,7 +556,7 @@ jobs:
             find build -name "images" -type d -exec du -sh {} \; | head -5
           fi
           
-        timeout-minutes: 60
+        timeout-minutes: 180
         env:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
