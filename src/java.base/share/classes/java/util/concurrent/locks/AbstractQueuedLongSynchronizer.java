@@ -162,6 +162,7 @@ public abstract class AbstractQueuedLongSynchronizer
     }
 
     /**
+     * <p>添加当前线程到队列中</p>
      * Creates and enqueues node for current thread and given mode.
      *
      * @param mode Node.EXCLUSIVE for exclusive, Node.SHARED for shared
@@ -173,9 +174,9 @@ public abstract class AbstractQueuedLongSynchronizer
         for (;;) {
             Node oldTail = tail;
             if (oldTail != null) {
-                node.setPrevRelaxed(oldTail);
+                node.setPrevRelaxed(oldTail); // 设置当前结点的前驱
                 if (compareAndSetTail(oldTail, node)) {
-                    oldTail.next = node;
+                    oldTail.next = node; // 设置前驱结点的后继
                     return node;
                 }
             } else {
