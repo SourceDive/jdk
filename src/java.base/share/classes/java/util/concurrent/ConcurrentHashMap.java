@@ -923,6 +923,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * <p>key存在，返回value</p>
+     * <p>key不存在，返回null</p>
      * Returns the value to which the specified key is mapped,
      * or {@code null} if this map contains no mapping for the key.
      *

@@ -399,6 +399,7 @@ public abstract class AbstractQueuedSynchronizer
         /** Marker to indicate a node is waiting in exclusive mode */
         static final Node EXCLUSIVE = null;
 
+        /// waitStatus 枚举值
         /** waitStatus value to indicate thread has cancelled. */
         static final int CANCELLED =  1;
         /** waitStatus value to indicate successor's thread needs unparking. */
@@ -478,6 +479,7 @@ public abstract class AbstractQueuedSynchronizer
         volatile Node next;
 
         /**
+         * <p>结点中存放的线程。</p>
          * The thread that enqueued this node.  Initialized on
          * construction and nulled out after use.
          */
@@ -589,6 +591,7 @@ public abstract class AbstractQueuedSynchronizer
     private volatile int state;
 
     /**
+     * <p>返回当前同步状态。</p>
      * Returns the current value of synchronization state.
      * This operation has memory semantics of a {@code volatile} read.
      * @return current state value
@@ -598,6 +601,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>设置同步状态。</p>
      * Sets the value of synchronization state.
      * This operation has memory semantics of a {@code volatile} write.
      * @param newState the new state value
@@ -631,6 +635,7 @@ public abstract class AbstractQueuedSynchronizer
     static final long SPIN_FOR_TIMEOUT_THRESHOLD = 1000L;
 
     /**
+     * <p>入队。</p>
      * Inserts node into queue, initializing if necessary. See picture above.
      * @param node the node to insert
      * @return node's predecessor
@@ -1399,6 +1404,7 @@ public abstract class AbstractQueuedSynchronizer
     // Queue inspection methods
 
     /**
+     * <p>是否有等待中的线程。</p>
      * Queries whether any threads are waiting to acquire. Note that
      * because cancellations due to interrupts and timeouts may occur
      * at any time, a {@code true} return does not guarantee that any
@@ -1414,6 +1420,8 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>是否发生过竞争。</p>
+     * <p>是否有线程因获取锁失败而进入过等待队列。</p>
      * Queries whether any threads have ever contended to acquire this
      * synchronizer; that is, if an acquire method has ever blocked.
      *
@@ -1480,6 +1488,8 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>给定线程是否在队列中。</p>
+     * <p>实现：直接去遍历队列元素后对比。</p>
      * Returns true if the given thread is currently queued.
      *
      * <p>This implementation traverses the queue to determine
@@ -1578,6 +1588,8 @@ public abstract class AbstractQueuedSynchronizer
     // Instrumentation and monitoring methods
 
     /**
+     * <p>获取等待队列中的线程数量。</p>
+     * <p>注意这里是从后向前去遍历。</p>
      * Returns an estimate of the number of threads waiting to
      * acquire.  The value is only an estimate because the number of
      * threads may change dynamically while this method traverses
@@ -1596,6 +1608,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>获取等待队列中的线程集合。</p>
      * Returns a collection containing threads that may be waiting to
      * acquire.  Because the actual set of threads may change
      * dynamically while constructing this result, the returned
