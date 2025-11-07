@@ -1,18 +1,236 @@
+# ============================================
+# JDK 源码项目 .gitignore
+# ============================================
+
+# ============================================
+# 构建输出目录
+# ============================================
 /build/
 /dist/
-/.idea/
-nbproject/private/
+/compiled/
+/docker_inner_sdk/
+/docker_compiled_jdk/
+/.jib/
 /webrev
 /.src-rev
-/.jib/
-.DS_Store
+
+# ============================================
+# IDE 相关文件
+# ============================================
+# IntelliJ IDEA
+/.idea/
+**/*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
 .metadata/
+.classpath
+.project
+.settings/
 .recommenders/
+bin/
+*.launch
+*.pydevproject
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# 其他编辑器
+*.swp
+*.swo
+*~
+.DS_Store
+._*
+
+# ============================================
+# Java 编译产物
+# ============================================
+# 编译后的 .class 文件（但保留测试数据中的 jar 文件）
+**/*.class
+!test/**/*.jar
+
+# 编译临时文件
+*.jar
+!test/**/*.jar
+*.war
+*.ear
+*.nar
+
+# ============================================
+# 操作系统文件
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================
+# 日志文件
+# ============================================
+**/*.log
+*.log.*
+*.log.[0-9]
+*.log.[0-9][0-9]
+*.log.[0-9][0-9][0-9]
+*.log.[0-9][0-9][0-9][0-9]
+*.out
+*.err
+
+# ============================================
+# 测试相关
+# ============================================
 test/nashorn/script/external
 test/nashorn/lib
 NashornProfile.txt
 **/JTreport/**
 **/JTwork/**
-/docker_inner_sdk/
-**/*.iml
-**/*.log
+
+# ============================================
+# 构建工具和依赖管理
+# ============================================
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+gradle-app.setting
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# Ant
+*.classpath
+*.project
+build/
+dist/
+lib/
+
+# ============================================
+# 临时文件和缓存
+# ============================================
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*.patch
+*.diff
+*.swp
+*.swo
+*~
+.cache/
+*.cache
+
+# ============================================
+# 文档生成
+# ============================================
+docs/_build/
+site/
+.jekyll-cache/
+.jekyll-metadata
+
+# ============================================
+# 其他
+# ============================================
+# 用户测试目录（如果不想提交）
+/my-test/*.class
+/my-test/*.jar
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# 压缩文件（除了测试数据）
+*.zip
+*.tar
+*.tar.gz
+*.rar
+!test/**/*.zip
+!test/**/*.tar
+!test/**/*.tar.gz
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 配置文件（敏感信息）
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+*.truststore
+
+# 覆盖率报告
+coverage/
+*.coverage
+.nyc_output/
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+
+# 性能分析文件
+*.hprof
+*.prof
+*.perf
+
+# 调试文件
+*.pdb
+*.dSYM/
