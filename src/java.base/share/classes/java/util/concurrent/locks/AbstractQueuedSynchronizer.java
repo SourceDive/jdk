@@ -58,6 +58,7 @@ import java.util.concurrent.TimeUnit;
  * #setState} and {@link #compareAndSetState} is tracked with respect
  * to synchronization.
  *
+ * <p>子类应该定义非public的方法，只是为了内部的使用。</p>
  * <p>Subclasses should be defined as non-public internal helper
  * classes that are used to implement the synchronization properties
  * of their enclosing class.  Class
@@ -321,7 +322,7 @@ public abstract class AbstractQueuedSynchronizer
      * Hagersten) lock queue. CLH locks are normally used for
      * spinlocks.  We instead use them for blocking synchronizers, but
      * use the same basic tactic of holding some of the control
-     * information about a thread in the predecessor of its node.  A
+     * information about a thread in the predecessor(前任) of its node.  A
      * "status" field in each node keeps track of whether a thread
      * should block.  A node is signalled when its predecessor
      * releases.  Each node of the queue otherwise serves as a
@@ -329,9 +330,13 @@ public abstract class AbstractQueuedSynchronizer
      * thread. The status field does NOT control whether threads are
      * granted locks etc though.  A thread may try to acquire if it is
      * first in the queue. But being first does not guarantee success;
-     * it only gives the right to contend.  So the currently released
+     * it only gives the right to contend(只是给予竞争的机会，不保证一定获取到锁).  So the
+     * currently
+     * released
      * contender thread may need to rewait.
      *
+     * <p>入队：在队列排队</p>
+     * <p>出队：设置队头</p>
      * <p>To enqueue into a CLH lock, you atomically splice it in as new
      * tail. To dequeue, you just set the head field.
      * <pre>
@@ -353,13 +358,13 @@ public abstract class AbstractQueuedSynchronizer
      * successor is (normally) relinked to a non-cancelled
      * predecessor. For explanation of similar mechanics in the case
      * of spin locks, see the papers by Scott and Scherer at
-     * http://www.cs.rochester.edu/u/scott/synchronization/
+     * http://www.cs.rochester.edu/u/scott/synchronization/(这个网址访问不了了。)
      *
      * <p>We also use "next" links to implement blocking mechanics.
      * The thread id for each node is kept in its own node, so a
      * predecessor signals the next node to wake up by traversing
      * next link to determine which thread it is.  Determination of
-     * successor must avoid races with newly queued nodes to set
+     * successor(后任) must avoid races with newly queued nodes to set
      * the "next" fields of their predecessors.  This is solved
      * when necessary by checking backwards from the atomically
      * updated "tail" when a node's successor appears to be null.
@@ -395,13 +400,13 @@ public abstract class AbstractQueuedSynchronizer
      */
     static final class Node {
         /** Marker to indicate a node is waiting in shared mode */
-        static final Node SHARED = new Node();
+        static final Node SHARED = new Node(); // 共享模式
         /** Marker to indicate a node is waiting in exclusive mode */
-        static final Node EXCLUSIVE = null;
+        static final Node EXCLUSIVE = null; // 排他模式
 
         /// waitStatus 枚举值
         /** waitStatus value to indicate thread has cancelled. */
-        static final int CANCELLED =  1;
+        static final int CANCELLED =  1; // 线程已被取消
         /** waitStatus value to indicate successor's thread needs unparking. */
         static final int SIGNAL    = -1;
         /** waitStatus value to indicate thread is waiting on condition. */
@@ -692,6 +697,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>唤醒 node 的后继结点。</p>
      * Wakes up node's successor, if one exists.
      *
      * @param node the node
@@ -712,6 +718,7 @@ public abstract class AbstractQueuedSynchronizer
          * traverse backwards from tail to find the actual
          * non-cancelled successor.
          */
+        // 找到一个合适的结点，需要遍历寻找。
         Node s = node.next;
         if (s == null || s.waitStatus > 0) {
             s = null;
@@ -719,6 +726,8 @@ public abstract class AbstractQueuedSynchronizer
                 if (p.waitStatus <= 0)
                     s = p;
         }
+
+        // 找到了，唤醒结点中的线程。
         if (s != null)
             LockSupport.unpark(s.thread);
     }
@@ -1103,6 +1112,7 @@ public abstract class AbstractQueuedSynchronizer
     // Main exported methods
 
     /**
+     * <p>以排他模式尝试获取。</p>
      * Attempts to acquire in exclusive mode. This method should query
      * if the state of the object permits it to be acquired in the
      * exclusive mode, and if so to acquire it.
@@ -1133,6 +1143,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>释放锁。</p>
      * Attempts to set the state to reflect a release in exclusive
      * mode.
      *
@@ -1239,6 +1250,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * <p>以排他模式获取锁。</p>
+     * <p>获取锁失败，进入队列。</p>
      * Acquires in exclusive mode, ignoring interrupts.  Implemented
      * by invoking at least once {@link #tryAcquire},
      * returning on success.  Otherwise the thread is queued, possibly
@@ -1304,6 +1316,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>释放锁。</p>
      * Releases in exclusive mode.  Implemented by unblocking one or
      * more threads if {@link #tryRelease} returns true.
      * This method can be used to implement method {@link Lock#unlock}.

@@ -145,6 +145,7 @@ public class LockSupport {
     }
 
     /**
+     * <p>唤醒给定的线程。</p>
      * Makes available the permit for the given thread, if it
      * was not already available.  If the thread was blocked on
      * {@code park} then it will unblock.  Otherwise, its next call
@@ -161,6 +162,7 @@ public class LockSupport {
     }
 
     /**
+     * <p>阻塞当前线程。</p>
      * Disables the current thread for thread scheduling purposes unless the
      * permit is available.
      *

@@ -258,6 +258,7 @@ class Thread implements Runnable {
     public static final int MAX_PRIORITY = 10;
 
     /**
+     * <p>返回当前执行线程的引用。</p>
      * Returns a reference to the currently executing thread object.
      *
      * @return  the currently executing thread.
@@ -284,6 +285,8 @@ class Thread implements Runnable {
     public static native void yield();
 
     /**
+     * <p>线程睡眠。</p>
+     * <p>不会失去monitor的持有权。</p>
      * Causes the currently executing thread to sleep (temporarily cease
      * execution) for the specified number of milliseconds, subject to
      * the precision and accuracy of system timers and schedulers. The thread
@@ -303,6 +306,8 @@ class Thread implements Runnable {
     public static native void sleep(long millis) throws InterruptedException;
 
     /**
+     * <p>线程睡眠。</p>
+     * <p>不会失去monitor的持有权。</p>
      * Causes the currently executing thread to sleep (temporarily cease
      * execution) for the specified number of milliseconds plus the specified
      * number of nanoseconds, subject to the precision and accuracy of system
@@ -1786,11 +1791,13 @@ class Thread implements Runnable {
      */
     public enum State {
         /**
+         * <p>新建</p>
          * Thread state for a thread which has not yet started.
          */
         NEW,
 
         /**
+         * <p>执行</p>
          * Thread state for a runnable thread.  A thread in the runnable
          * state is executing in the Java virtual machine but it may
          * be waiting for other resources from the operating system
@@ -1799,6 +1806,7 @@ class Thread implements Runnable {
         RUNNABLE,
 
         /**
+         * <p>阻塞</p>
          * Thread state for a thread blocked waiting for a monitor lock.
          * A thread in the blocked state is waiting for a monitor lock
          * to enter a synchronized block/method or
@@ -1808,6 +1816,7 @@ class Thread implements Runnable {
         BLOCKED,
 
         /**
+         * <p>等待</p>
          * Thread state for a waiting thread.
          * A thread is in the waiting state due to calling one of the
          * following methods:

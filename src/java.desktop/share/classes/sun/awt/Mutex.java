@@ -30,7 +30,7 @@ public class Mutex {
     private Thread owner;
 
     public synchronized void lock() {
-        if (locked && Thread.currentThread() == owner) {
+        if (locked && Thread.currentThread() == owner) { // 从这个判断可以看出不支持重入。
             throw new IllegalMonitorStateException();
         }
         do {

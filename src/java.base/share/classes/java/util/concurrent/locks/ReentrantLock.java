@@ -127,6 +127,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         @ReservedStackAccess
         final boolean nonfairTryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
+
+            // 获取同步状态
             int c = getState();
 
             // 锁空闲
@@ -153,13 +155,19 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         @ReservedStackAccess
         protected final boolean tryRelease(int releases) {
             int c = getState() - releases;
+
+            // 释放操作必须由持有锁的线程执行。
             if (Thread.currentThread() != getExclusiveOwnerThread())
                 throw new IllegalMonitorStateException();
             boolean free = false;
+
+            // 锁完全释放。
             if (c == 0) {
                 free = true;
-                setExclusiveOwnerThread(null);
+                setExclusiveOwnerThread(null); // 清除持有线程
             }
+
+            // 更新同步状态。
             setState(c);
             return free;
         }
@@ -199,7 +207,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
-     * <p>同步对象（非公平锁）</p>
+     * <p>同步器（非公平锁）</p>
      * Sync object for non-fair locks
      */
     static final class NonfairSync extends Sync {
@@ -210,7 +218,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
-     * <p>同步对象（公平锁）</p>
+     * <p>同步器（公平锁）</p>
      * Sync object for fair locks
      */
     static final class FairSync extends Sync {
@@ -223,7 +231,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         protected final boolean tryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
 
-            // 获取锁状态
+            // 获取同步状态
             int c = getState();
 
             // 如果锁空闲，设置当前线程。
@@ -232,16 +240,20 @@ public class ReentrantLock implements Lock, java.io.Serializable {
                 // 2、CAS尝试或锁成功
                 if (!hasQueuedPredecessors() &&
                     compareAndSetState(0, acquires)) {
+                    // 设置持有锁的线程
                     setExclusiveOwnerThread(current);
                     return true;
                 }
             }
             // 锁已被当前线程持有。
             else if (current == getExclusiveOwnerThread()) {
+                // 更新重入次数。
                 int nextc = c + acquires;
                 if (nextc < 0)
                     throw new Error("Maximum lock count exceeded");
-                setState(nextc); // 设置重入次数。
+
+                // 更新同步状态。
+                setState(nextc);
                 return true;
             }
             return false;
@@ -267,6 +279,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
+     * <p>获取锁</p>
+     * <p>获取锁失败进入队列。</p>
      * Acquires the lock.
      *
      * <p>Acquires the lock if it is not held by another thread and returns
@@ -336,6 +350,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
+     * <p>尝试获取锁，成功返回true</p>
+     * <p>失败返回false, 不会进入队列。</p>
      * Acquires the lock only if it is not held by another thread at the time
      * of invocation.
      *
@@ -535,6 +551,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
+     * <p>锁是否被当前线程持有。</p>
      * Queries if this lock is held by the current thread.
      *
      * <p>Analogous to the {@link Thread#holdsLock(Object)} method for
@@ -580,6 +597,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
+     * <p>锁是否被线程持有。</p>
      * Queries if this lock is held by any thread. This method is
      * designed for use in monitoring of the system state,
      * not for synchronization control.
@@ -592,6 +610,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
+     * <p>是否为公平锁。</p>
      * Returns {@code true} if this lock has fairness set true.
      *
      * @return {@code true} if this lock has fairness set true
@@ -647,6 +666,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
+     * <p>返回等待获取锁的线程数量。</p>
      * Returns an estimate of the number of threads waiting to acquire
      * this lock.  The value is only an estimate because the number of
      * threads may change dynamically while this method traverses
