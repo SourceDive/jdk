@@ -408,14 +408,14 @@ public abstract class AbstractQueuedSynchronizer
         /** waitStatus value to indicate thread has cancelled. */
         static final int CANCELLED =  1; // 线程已被取消
         /** waitStatus value to indicate successor's thread needs unparking. */
-        static final int SIGNAL    = -1;
+        static final int SIGNAL    = -1; // 后继节点需要被唤醒
         /** waitStatus value to indicate thread is waiting on condition. */
-        static final int CONDITION = -2;
+        static final int CONDITION = -2; // 节点在条件队列中
         /**
          * waitStatus value to indicate the next acquireShared should
          * unconditionally propagate.
          */
-        static final int PROPAGATE = -3;
+        static final int PROPAGATE = -3; // 共享模式下需要传播
 
         /**
          * Status field, taking on only the values:
@@ -1112,7 +1112,7 @@ public abstract class AbstractQueuedSynchronizer
     // Main exported methods
 
     /**
-     * <p>以排他模式尝试获取。</p>
+     * <p>获取独占锁。</p>
      * Attempts to acquire in exclusive mode. This method should query
      * if the state of the object permits it to be acquired in the
      * exclusive mode, and if so to acquire it.
@@ -1143,7 +1143,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>释放锁。</p>
+     * <p>释放独占锁。</p>
      * Attempts to set the state to reflect a release in exclusive
      * mode.
      *
@@ -1170,6 +1170,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>获取共享锁。</p>
      * Attempts to acquire in shared mode. This method should query if
      * the state of the object permits it to be acquired in the shared
      * mode, and if so to acquire it.
@@ -1206,6 +1207,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>释放共享锁。</p>
      * Attempts to set the state to reflect a release in shared mode.
      *
      * <p>This method is always invoked by the thread performing release.
@@ -1231,6 +1233,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>是否持有独占锁。</p>
      * Returns {@code true} if synchronization is held exclusively with
      * respect to the current (calling) thread.  This method is invoked
      * upon each call to a {@link ConditionObject} method.

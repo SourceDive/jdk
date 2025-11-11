@@ -303,6 +303,7 @@ public abstract class AbstractQueuedLongSynchronizer
     // Utilities for various versions of acquire
 
     /**
+     * <p>取消获取。</p>
      * Cancels an ongoing attempt to acquire.
      *
      * @param node the node
