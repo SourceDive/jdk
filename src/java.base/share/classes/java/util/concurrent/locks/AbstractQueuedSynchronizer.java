@@ -1252,8 +1252,8 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>以排他模式获取锁。</p>
-     * <p>获取锁失败，进入队列。</p>
+     * <p>获取独占锁。</p>
+     * <p>失败，进入队列。</p>
      * Acquires in exclusive mode, ignoring interrupts.  Implemented
      * by invoking at least once {@link #tryAcquire},
      * returning on success.  Otherwise the thread is queued, possibly
@@ -1319,7 +1319,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>释放锁。</p>
+     * <p>释放独占锁。</p>
      * Releases in exclusive mode.  Implemented by unblocking one or
      * more threads if {@link #tryRelease} returns true.
      * This method can be used to implement method {@link Lock#unlock}.

@@ -280,7 +280,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
 
     /**
      * <p>获取锁</p>
-     * <p>获取锁失败进入队列。</p>
+     * <p>如果失败则进入队列。</p>
      * Acquires the lock.
      *
      * <p>Acquires the lock if it is not held by another thread and returns

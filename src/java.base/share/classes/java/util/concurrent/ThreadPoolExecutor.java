@@ -321,6 +321,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
+     * <p>这里解释了 ctl 代表了什么含义。 control state.</p>
      * The main pool control state, ctl, is an atomic integer packing
      * two conceptual fields
      *   workerCount, indicating the effective number of threads
@@ -381,17 +382,20 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private static final int COUNT_BITS = Integer.SIZE - 3;
     private static final int COUNT_MASK = (1 << COUNT_BITS) - 1;
 
+    // 线程池状态
     // runState is stored in the high-order bits
-    private static final int RUNNING    = -1 << COUNT_BITS;
-    private static final int SHUTDOWN   =  0 << COUNT_BITS;
-    private static final int STOP       =  1 << COUNT_BITS;
-    private static final int TIDYING    =  2 << COUNT_BITS;
-    private static final int TERMINATED =  3 << COUNT_BITS;
+    private static final int RUNNING    = -1 << COUNT_BITS; // Accept new tasks and process queued tasks
+    private static final int SHUTDOWN   =  0 << COUNT_BITS; // Don't accept new tasks, but process queued tasks
+    private static final int STOP       =  1 << COUNT_BITS; // Don't accept new tasks, don't process queued tasks
+    private static final int TIDYING    =  2 << COUNT_BITS; // 所有任务已终止
+    private static final int TERMINATED =  3 << COUNT_BITS; // 执行完成
 
     // Packing and unpacking ctl
+    // 获取线程池状态
     private static int runStateOf(int c)     { return c & ~COUNT_MASK; }
+    // 获取工作线程数量
     private static int workerCountOf(int c)  { return c & COUNT_MASK; }
-    private static int ctlOf(int rs, int wc) { return rs | wc; }
+    private static int ctlOf(int rs, int wc) { return rs | wc; } // 合并状态和数量
 
     /*
      * Bit field accessors that don't require unpacking ctl.
@@ -611,11 +615,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         private static final long serialVersionUID = 6138294804551838833L;
 
         /** Thread this worker is running in.  Null if factory fails. */
-        final Thread thread;
+        final Thread thread; // 执行的任务线程。
         /** Initial task to run.  Possibly null. */
         Runnable firstTask;
         /** Per-thread task counter */
-        volatile long completedTasks;
+        volatile long completedTasks; // 完成的任务计数。
 
         // TODO: switch to AbstractQueuedLongSynchronizer and move
         // completedTasks into the lock word.
@@ -644,7 +648,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             return getState() != 0;
         }
 
-        protected boolean tryAcquire(int unused) {
+        protected boolean tryAcquire(int unused) { // 这里的参数实际上没有用到，所以起名是unused
             if (compareAndSetState(0, 1)) {
                 setExclusiveOwnerThread(Thread.currentThread());
                 return true;
@@ -661,7 +665,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         public void lock()        { acquire(1); }
         public boolean tryLock()  { return tryAcquire(1); }
         public void unlock()      { release(1); }
-        public boolean isLocked() { return isHeldExclusively(); }
+        public boolean isLocked() { return isHeldExclusively(); } // 是否已被锁定
 
         void interruptIfStarted() {
             Thread t;
@@ -1057,12 +1061,13 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             }
 
             try {
+                // 取出队列任务
                 Runnable r = timed ?
                     workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
                     workQueue.take();
                 if (r != null)
-                    return r;
-                timedOut = true;
+                    return r; // 有任务返回任务
+                timedOut = true; // 无任务，超时为true
             } catch (InterruptedException retry) {
                 timedOut = false;
             }
@@ -1346,7 +1351,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
          * thread.  If it fails, we know we are shut down or saturated
          * and so reject the task.
          */
-        int c = ctl.get();
+        int c = ctl.get(); // 获取 control 信息
+
+        // 工作线程数 < 核心线程数
         if (workerCountOf(c) < corePoolSize) {
             if (addWorker(command, true))
                 return;
@@ -1873,6 +1880,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     }
 
     /**
+     * <p>已完成任务数量。</p>
      * Returns the approximate total number of tasks that have
      * completed execution. Because the states of tasks and threads
      * may change dynamically during computation, the returned value
