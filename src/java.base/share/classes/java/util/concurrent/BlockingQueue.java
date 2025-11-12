@@ -39,6 +39,9 @@ import java.util.Collection;
 import java.util.Queue;
 
 /**
+ * <p>阻塞队列</p>
+ * <p>获取元素时，会等待队列变为非空</p>
+ * <p>存储元素时，会等待队列变得空间有剩余。</p>
  * A {@link Queue} that additionally supports operations that wait for
  * the queue to become non-empty when retrieving an element, and wait
  * for space to become available in the queue when storing an element.
@@ -178,7 +181,8 @@ import java.util.Queue;
  */
 public interface BlockingQueue<E> extends Queue<E> {
     /**
-     * <p>添加给定的元素到队列中。没有空间则报错。</p>
+     * <p>添加给定的元素到队列中。</p>
+     * <p>成功：true; 失败：报错。</p>
      * Inserts the specified element into this queue if it is possible to do
      * so immediately without violating capacity restrictions, returning
      * {@code true} upon success and throwing an
@@ -199,7 +203,8 @@ public interface BlockingQueue<E> extends Queue<E> {
     boolean add(E e);
 
     /**
-     * <p>向队列中插入元素。没有空间则返回false.</p>
+     * <p>向队列中插入元素。</p>
+     * <p>成功：true; 失败：false.</p>
      * Inserts the specified element into this queue if it is possible to do
      * so immediately without violating capacity restrictions, returning
      * {@code true} upon success and {@code false} if no space is currently
@@ -219,7 +224,8 @@ public interface BlockingQueue<E> extends Queue<E> {
     boolean offer(E e);
 
     /**
-     * <p>插入给定的元素到队列中。没有空间则等待。</p>
+     * <p>插入给定的元素到队列中。</p>
+     * <p>成功：无返回；失败：等待。</p>
      * Inserts the specified element into this queue, waiting if necessary
      * for space to become available.
      *
@@ -234,7 +240,8 @@ public interface BlockingQueue<E> extends Queue<E> {
     void put(E e) throws InterruptedException;
 
     /**
-     * <p>插入元素到队列中。阻塞给定的时间。</p>
+     * <p>插入元素到队列中。</p>
+     * <p>成功：true; 失败：阻塞给定的时间后返回false。</p>
      * Inserts the specified element into this queue, waiting up to the
      * specified wait time if necessary for space to become available.
      *
@@ -256,7 +263,8 @@ public interface BlockingQueue<E> extends Queue<E> {
         throws InterruptedException;
 
     /**
-     * <p>拿走头部元素。没有则阻塞。</p>
+     * <p>获取并移除头部元素。</p>
+     * <p>成功：返回头部元素；失败：等待。</p>
      * Retrieves and removes the head of this queue, waiting if necessary
      * until an element becomes available.
      *
@@ -266,7 +274,8 @@ public interface BlockingQueue<E> extends Queue<E> {
     E take() throws InterruptedException;
 
     /**
-     * <p>拿走队列的头部元素。阻塞给定的时间。</p>
+     * <p>获取并移除头部元素。</p>
+     * <p>成功：返回头部元素；失败：阻塞给定的时间后返回null。</p>
      * Retrieves and removes the head of this queue, waiting up to the
      * specified wait time if necessary for an element to become available.
      *
@@ -315,6 +324,8 @@ public interface BlockingQueue<E> extends Queue<E> {
     boolean remove(Object o);
 
     /**
+     * <p>队列中是否存在给定的元素。</p>
+     * <p>存在：true; 不存在：false</p>
      * Returns {@code true} if this queue contains the specified element.
      * More formally, returns {@code true} if and only if this queue contains
      * at least one element {@code e} such that {@code o.equals(e)}.

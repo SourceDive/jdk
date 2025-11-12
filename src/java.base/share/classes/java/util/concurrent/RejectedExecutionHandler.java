@@ -36,6 +36,7 @@
 package java.util.concurrent;
 
 /**
+ * <p>任务拒绝处理器。</p>
  * A handler for tasks that cannot be executed by a {@link ThreadPoolExecutor}.
  *
  * @since 1.5
@@ -44,6 +45,7 @@ package java.util.concurrent;
 public interface RejectedExecutionHandler {
 
     /**
+     * <p>触发时机：在线程池拒绝一个任务时。</p>
      * Method that may be invoked by a {@link ThreadPoolExecutor} when
      * {@link ThreadPoolExecutor#execute execute} cannot accept a
      * task.  This may occur when no more threads or queue slots are

@@ -434,6 +434,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     }
 
     /**
+     * <p>任务队列。</p>
+     * <p>持有任务，并且传送给worker.</p>
      * The queue used for holding tasks and handing off to worker
      * threads.  We do not require that workQueue.poll() returning
      * null necessarily means that workQueue.isEmpty(), so rely
@@ -492,6 +494,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
 
     /**
+     * <p>线程工厂。</p>
      * Factory for new threads. All threads are created using this
      * factory (via method addWorker).  All callers must be prepared
      * for addWorker to fail, which may reflect a system or user's
@@ -516,6 +519,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private volatile RejectedExecutionHandler handler;
 
     /**
+     * <p>空闲线程存活时间。</p>
      * Timeout in nanoseconds for idle threads waiting for work.
      * Threads use this timeout when there are more than corePoolSize
      * present or if allowCoreThreadTimeOut. Otherwise they wait
@@ -531,6 +535,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private volatile boolean allowCoreThreadTimeOut;
 
     /**
+     * <p>核心线程数量。</p>
+     * <p>一直存活的work数量。</p>
      * Core pool size is the minimum number of workers to keep alive
      * (and not allow to time out etc) unless allowCoreThreadTimeOut
      * is set, in which case the minimum is zero.
@@ -541,6 +547,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private volatile int corePoolSize;
 
     /**
+     * <p>最大线程数量。</p>
      * Maximum pool size.
      *
      * Since the worker count is actually stored in COUNT_BITS bits,
@@ -2005,6 +2012,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     /* Predefined RejectedExecutionHandlers */
 
     /**
+     * <p>直接在调用者线程中去执行拒绝的任务。</p>
      * A handler for rejected tasks that runs the rejected task
      * directly in the calling thread of the {@code execute} method,
      * unless the executor has been shut down, in which case the task
@@ -2017,6 +2025,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         public CallerRunsPolicy() { }
 
         /**
+         * <p>直接在当前线程触发任务。</p>
          * Executes task r in the caller's thread, unless the executor
          * has been shut down, in which case the task is discarded.
          *
@@ -2024,6 +2033,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
          * @param e the executor attempting to execute this task
          */
         public void rejectedExecution(Runnable r, ThreadPoolExecutor e) {
+            // 当线程池未关闭时，触发任务。
             if (!e.isShutdown()) {
                 r.run();
             }
@@ -2044,6 +2054,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         public AbortPolicy() { }
 
         /**
+         * <p>直接抛出异常。</p>
          * Always throws RejectedExecutionException.
          *
          * @param r the runnable task requested to be executed
@@ -2068,6 +2079,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         public DiscardPolicy() { }
 
         /**
+         * <p>什么都不做，直接丢弃任务。</p>
          * Does nothing, which has the effect of discarding task r.
          *
          * @param r the runnable task requested to be executed

@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
+ * <p>1、一些集合允许重复，而另外一些不允许。</p>
  * The root interface in the <i>collection hierarchy</i>.  A collection
  * represents a group of objects, known as its <i>elements</i>.  Some
  * collections allow duplicate elements and others do not.  Some are ordered
@@ -574,6 +575,7 @@ public interface Collection<E> extends Iterable<E> {
     boolean retainAll(Collection<?> c);
 
     /**
+     * <p>移除集合中的所有元素。</p>
      * Removes all of the elements from this collection (optional operation).
      * The collection will be empty after this method returns.
      *

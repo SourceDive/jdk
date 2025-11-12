@@ -49,6 +49,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
+ * <p>链表实现的队列。</p>
+ * <p>遵守FIFO.</p>
  * An optionally-bounded {@linkplain BlockingQueue blocking queue} based on
  * linked nodes.
  * This queue orders elements FIFO (first-in-first-out).
@@ -118,12 +120,14 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      */
 
     /**
+     * <p>链表结点类</p>
      * Linked list node class.
      */
     static class Node<E> {
         E item;
 
         /**
+         * <p>后继结点引用</p>
          * One of:
          * - the real successor Node
          * - this Node, meaning the successor is head.next
@@ -137,16 +141,19 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     /** The capacity bound, or Integer.MAX_VALUE if none */
     private final int capacity;
 
-    /** Current number of elements */
+    /** 当前元素数量。 Current number of elements */
     private final AtomicInteger count = new AtomicInteger();
 
     /**
+     * <p>队头</p>
      * Head of linked list.
      * Invariant: head.item == null
+     * <p>头结点不储存元素。</p>
      */
     transient Node<E> head;
 
     /**
+     * <p>队尾</p>
      * Tail of linked list.
      * Invariant: last.next == null
      */
@@ -192,6 +199,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>入队</p>
+     * <p>将新节点"连接并设为新的末尾"</p>
      * Links node at end of queue.
      *
      * @param node the node
@@ -200,9 +209,13 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         // assert putLock.isHeldByCurrentThread();
         // assert last.next == null;
         last = last.next = node;
+        // 等价于下面这个
+        // last.next = node;  // 将新节点链接到当前链表的末尾
+        // last = node;       // 更新last指针，使其指向新的末尾节点
     }
 
     /**
+     * <p>出队</p>
      * Removes a node from head of queue.
      *
      * @return the node
@@ -339,7 +352,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
              * signalled if it ever changes from capacity. Similarly
              * for all other uses of count in other wait guards.
              */
-            while (count.get() == capacity) {
+            while (count.get() == capacity) { // 队列已满
                 notFull.await();
             }
             enqueue(node);
@@ -559,6 +572,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>队列是否存在给定的元素。</p>
      * Returns {@code true} if this queue contains the specified element.
      * More formally, returns {@code true} if and only if this queue contains
      * at least one element {@code e} such that {@code o.equals(e)}.
@@ -567,10 +581,10 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * @return {@code true} if this queue contains the specified element
      */
     public boolean contains(Object o) {
-        if (o == null) return false;
+        if (o == null) return false; // null 直接返回。
         fullyLock();
         try {
-            for (Node<E> p = head.next; p != null; p = p.next)
+            for (Node<E> p = head.next; p != null; p = p.next) // 遍历
                 if (o.equals(p.item))
                     return true;
             return false;
@@ -580,6 +594,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>将队列中元素转换为对象数组。</p>
      * Returns an array containing all of the elements in this queue, in
      * proper sequence.
      *
@@ -598,7 +613,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             int size = count.get();
             Object[] a = new Object[size];
             int k = 0;
-            for (Node<E> p = head.next; p != null; p = p.next)
+            for (Node<E> p = head.next; p != null; p = p.next) // 遍历
                 a[k++] = p.item;
             return a;
         } finally {

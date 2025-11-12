@@ -137,6 +137,8 @@ package java.util;
  */
 public interface Queue<E> extends Collection<E> {
     /**
+     * <p>添加元素。</p>
+     * <p>成功：true; 失败：报错。</p>
      * Inserts the specified element into this queue if it is possible to do so
      * immediately without violating capacity restrictions, returning
      * {@code true} upon success and throwing an {@code IllegalStateException}
@@ -156,6 +158,8 @@ public interface Queue<E> extends Collection<E> {
     boolean add(E e);
 
     /**
+     * <p>添加元素</p>
+     * <p>成功：true; 失败：false.</p>
      * Inserts the specified element into this queue if it is possible to do
      * so immediately without violating capacity restrictions.
      * When using a capacity-restricted queue, this method is generally
@@ -175,6 +179,8 @@ public interface Queue<E> extends Collection<E> {
     boolean offer(E e);
 
     /**
+     * <p>移除队列头部元素。</p>
+     * <p>成功：返回头部元素；失败：报错。</p>
      * Retrieves and removes the head of this queue.  This method differs
      * from {@link #poll() poll()} only in that it throws an exception if
      * this queue is empty.
@@ -185,6 +191,8 @@ public interface Queue<E> extends Collection<E> {
     E remove();
 
     /**
+     * <p>移除头部元素。</p>
+     * <p>成功：返回头部元素；失败：null。</p>
      * Retrieves and removes the head of this queue,
      * or returns {@code null} if this queue is empty.
      *
@@ -193,6 +201,8 @@ public interface Queue<E> extends Collection<E> {
     E poll();
 
     /**
+     * <p>获取头部元素。</p>
+     * <p>成功：返回头部元素；失败：报错。</p>
      * Retrieves, but does not remove, the head of this queue.  This method
      * differs from {@link #peek peek} only in that it throws an exception
      * if this queue is empty.
@@ -203,6 +213,8 @@ public interface Queue<E> extends Collection<E> {
     E element();
 
     /**
+     * <p>获取头部元素。</p>
+     * <p>成功：返回头部元素；失败：null。</p>
      * Retrieves, but does not remove, the head of this queue,
      * or returns {@code null} if this queue is empty.
      *
