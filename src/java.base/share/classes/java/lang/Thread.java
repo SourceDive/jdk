@@ -951,6 +951,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>中断此线程。</p>
      * Interrupts this thread.
      *
      * <p> Unless the current thread is interrupting itself, which is
@@ -1009,6 +1010,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>当前线程是否已被中断。</p>
      * Tests whether the current thread has been interrupted.  The
      * <i>interrupted status</i> of the thread is cleared by this method.  In
      * other words, if this method were to be called twice in succession, the

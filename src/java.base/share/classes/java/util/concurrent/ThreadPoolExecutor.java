@@ -402,16 +402,22 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * These depend on the bit layout and on workerCount being never negative.
      */
 
+    /**
+     * 线程池状态是否低于 s
+     */
     private static boolean runStateLessThan(int c, int s) {
-        return c < s;
+        return c < s; // 仅仅为数值比较
     }
 
+    /**
+     * 线程池状态是否至少为 s
+     */
     private static boolean runStateAtLeast(int c, int s) {
-        return c >= s;
+        return c >= s; // 仅仅为数值比较
     }
 
     private static boolean isRunning(int c) {
-        return c < SHUTDOWN;
+        return c < SHUTDOWN; // 仅仅为数值比较
     }
 
     /**
@@ -468,6 +474,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private final ReentrantLock mainLock = new ReentrantLock();
 
     /**
+     * <p>worker集合。</p>
      * Set containing all worker threads in pool. Accessed only when
      * holding mainLock.
      */
@@ -589,8 +596,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         new RuntimePermission("modifyThread");
 
     /**
+     * <p>worker的三种状态：-1(初始), 0(空闲), 1(工作中)</p>
+     * <p>实现了一个不可重入的互斥锁。</p>
      * Class Worker mainly maintains interrupt control state for
-     * threads running tasks, along with other minor bookkeeping.
+     * threads running tasks, along with other minor bookkeeping(指维护内部状态).
      * This class opportunistically extends AbstractQueuedSynchronizer
      * to simplify acquiring and releasing a lock surrounding each
      * task execution.  This protects against interrupts that are
@@ -629,7 +638,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
          * @param firstTask the first task (null if none)
          */
         Worker(Runnable firstTask) {
+            // 初始状态 -1
             setState(-1); // inhibit interrupts until runWorker
+
             this.firstTask = firstTask;
             this.thread = getThreadFactory().newThread(this);
         }
@@ -764,6 +775,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     }
 
     /**
+     * <p>中断所有工作线程。</p>
      * Interrupts all threads, even if active. Ignores SecurityExceptions
      * (in which case some threads may remain uninterrupted).
      */
@@ -1119,8 +1131,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     final void runWorker(Worker w) {
         Thread wt = Thread.currentThread();
+        // 取出work的任务后，将引用清空
         Runnable task = w.firstTask;
         w.firstTask = null;
+
         w.unlock(); // allow interrupts
         boolean completedAbruptly = true;
         try {
@@ -1130,15 +1144,18 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 // if not, ensure thread is not interrupted.  This
                 // requires a recheck in second case to deal with
                 // shutdownNow race while clearing interrupt
-                if ((runStateAtLeast(ctl.get(), STOP) ||
-                     (Thread.interrupted() &&
+                if ((runStateAtLeast(ctl.get(), STOP) || // 1、线程池状态至少已是 stop
+                     (Thread.interrupted() &&            // 2、当前线程已被中断且线程池状态至少为stop 且工作线程不是中断
                       runStateAtLeast(ctl.get(), STOP))) &&
                     !wt.isInterrupted())
-                    wt.interrupt();
+                    wt.interrupt(); // 中断工作线程
                 try {
+                    // 前置处理
                     beforeExecute(wt, task);
                     try {
                         task.run();
+
+                        // 后置处理
                         afterExecute(task, null);
                     } catch (Throwable ex) {
                         afterExecute(task, ex);
