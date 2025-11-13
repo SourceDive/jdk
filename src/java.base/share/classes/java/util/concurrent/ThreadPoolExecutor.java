@@ -462,6 +462,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private final BlockingQueue<Runnable> workQueue;
 
     /**
+     * <p>用到的地方：</p>
+     * <ul>1、shutdown</ul>
+     * <ul>2、tryTerminate</ul>
      * Lock held on access to workers set and related bookkeeping.
      * While we could use a concurrent set of some sort, it turns out
      * to be generally preferable to use a lock. Among the reasons is
@@ -570,6 +573,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private volatile int maximumPoolSize;
 
     /**
+     * <p>默认拒绝策略：直接抛出异常。</p>
      * The default rejected execution handler.
      */
     private static final RejectedExecutionHandler defaultHandler =
@@ -698,6 +702,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
     /**
      * <p>推进运行状态。</p>
+     * <p>状态变更：当前状态 -> 目标状态</p>
      * Transitions runState to given target, or leaves it alone if
      * already at least the given target.
      *
@@ -913,6 +918,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @return true if successful
      */
     private boolean addWorker(Runnable firstTask, boolean core) {
+        // 1、状态检查
         // retry 语句块里主要是为了将 workerCount 加1
         retry:
         for (int c = ctl.get();;) {
@@ -943,9 +949,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
         boolean workerStarted = false; // worker 启动标志
         boolean workerAdded = false;   // worker 添加标志
+
+        // 2、创建 worker 对象并启动线程
         Worker w = null;
         try {
-            // 创建 worker 对象
             w = new Worker(firstTask);
             final Thread t = w.thread;
             if (t != null) {
@@ -1004,6 +1011,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     }
 
     /**
+     * <p>将要销毁worker的清理工作。</p>
      * Performs cleanup and bookkeeping for a dying worker. Called
      * only from worker threads. Unless completedAbruptly is set,
      * assumes that workerCount has already been adjusted to account
@@ -1065,6 +1073,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         boolean timedOut = false; // Did the last poll() time out?
 
         for (;;) {
+
+            // 1、检查线程池状态。
             int c = ctl.get();
 
             // Check if queue empty only if necessary.
@@ -1086,8 +1096,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 continue;
             }
 
+            // 2、取出一个队列任务
             try {
-                // 取出队列任务
                 Runnable r = timed ?
                     workQueue.poll(keepAliveTime, TimeUnit.NANOSECONDS) :
                     workQueue.take();
@@ -1147,7 +1157,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         Thread wt = Thread.currentThread();
         // 取出work的任务后，将引用清空
         Runnable task = w.firstTask;
-        w.firstTask = null;
+        w.firstTask = null; // 确保首个任务只执行一次。
 
         w.unlock(); // allow interrupts
         boolean completedAbruptly = true;
@@ -1167,7 +1177,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     // 前置处理
                     beforeExecute(wt, task);
                     try {
-                        task.run();
+                        task.run(); // 在当前线程执行任务
 
                         // 后置处理
                         afterExecute(task, null);
@@ -1453,6 +1463,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         mainLock.lock();
         try {
             checkShutdownAccess();
+
+            // 更新状态为 STOP
             advanceRunState(STOP);
             interruptWorkers();
             tasks = drainQueue();

@@ -68,5 +68,5 @@ public interface Runnable {
      *
      * @see     java.lang.Thread#run()
      */
-    public abstract void run();
+    public abstract void run(); // caller 直接触发这个方法，是在当前线程中执行。
 }

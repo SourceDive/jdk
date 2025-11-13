@@ -184,6 +184,7 @@ public interface ExecutorService extends Executor {
     List<Runnable> shutdownNow();
 
     /**
+     * <p>线程池是否关闭。</p>
      * Returns {@code true} if this executor has been shut down.
      *
      * @return {@code true} if this executor has been shut down
