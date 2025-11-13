@@ -321,7 +321,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ThreadPoolExecutor extends AbstractExecutorService {
     /**
-     * <p>这里解释了 ctl 代表了什么含义。 control state.</p>
+     * <p>这里解释了 ctl 代表了什么含义: control state.</p>
      * The main pool control state, ctl, is an atomic integer packing
      * two conceptual fields
      *   workerCount, indicating the effective number of threads
@@ -416,6 +416,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         return c >= s; // 仅仅为数值比较
     }
 
+    /**
+     * 检查线程池是否在运行中。
+     */
     private static boolean isRunning(int c) {
         return c < SHUTDOWN; // 仅仅为数值比较
     }
@@ -881,6 +884,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
 
     /**
+     * <p>创建工作线程执行任务。</p>
      * Checks if a new worker can be added with respect to current
      * pool state and the given bound (either core or maximum). If so,
      * the worker count is adjusted accordingly, and, if possible, a
@@ -903,13 +907,15 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * @param core if true use corePoolSize as bound, else
      * maximumPoolSize. (A boolean indicator is used here rather than a
      * value to ensure reads of fresh values after checking other pool
-     * state).
+     * state). 使用核心线程数还是最大线程数
      * @return true if successful
      */
     private boolean addWorker(Runnable firstTask, boolean core) {
+        // retry 语句块里主要是为了将 workerCount 加1
         retry:
         for (int c = ctl.get();;) {
             // Check if queue empty only if necessary.
+            // 线程池状态检查
             if (runStateAtLeast(c, SHUTDOWN)
                 && (runStateAtLeast(c, STOP)
                     || firstTask != null
@@ -917,11 +923,15 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 return false;
 
             for (;;) {
+                // 检查工作线程数量是否超限
                 if (workerCountOf(c)
                     >= ((core ? corePoolSize : maximumPoolSize) & COUNT_MASK))
                     return false;
+                // 线程数量+1
                 if (compareAndIncrementWorkerCount(c))
                     break retry;
+
+                // 失败继续重试
                 c = ctl.get();  // Re-read ctl
                 if (runStateAtLeast(c, SHUTDOWN))
                     continue retry;
@@ -929,10 +939,11 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             }
         }
 
-        boolean workerStarted = false;
-        boolean workerAdded = false;
+        boolean workerStarted = false; // worker 启动标志
+        boolean workerAdded = false;   // worker 添加标志
         Worker w = null;
         try {
+            // 创建 worker 对象
             w = new Worker(firstTask);
             final Thread t = w.thread;
             if (t != null) {
@@ -958,11 +969,12 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                     mainLock.unlock();
                 }
                 if (workerAdded) {
-                    t.start();
+                    t.start(); // 启动work线程
                     workerStarted = true;
                 }
             }
         } finally {
+            // 添加时的异常处理
             if (! workerStarted)
                 addWorkerFailed(w);
         }
@@ -1372,10 +1384,12 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
         // 工作线程数 < 核心线程数
         if (workerCountOf(c) < corePoolSize) {
-            if (addWorker(command, true))
+            if (addWorker(command, true)) // 注意这里的参数
                 return;
             c = ctl.get();
         }
+
+        // 先队列中插入任务
         if (isRunning(c) && workQueue.offer(command)) {
             int recheck = ctl.get();
             if (! isRunning(recheck) && remove(command))
