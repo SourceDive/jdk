@@ -420,6 +420,7 @@ public interface Collection<E> extends Iterable<E> {
     boolean add(E e);
 
     /**
+     * <p>从集合中移除给定的元素。</p>
      * Removes a single instance of the specified element from this
      * collection, if it is present (optional operation).  More formally,
      * removes an element {@code e} such that

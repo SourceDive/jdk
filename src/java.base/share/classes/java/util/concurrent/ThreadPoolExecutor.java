@@ -845,6 +845,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
 
     /**
+     * <p>拒绝任务。</p>
      * Invokes the rejected execution handler for the given command.
      * Package-protected for use by ScheduledThreadPoolExecutor.
      */
@@ -885,6 +886,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
     /**
      * <p>创建工作线程执行任务。</p>
+     * <p>firstTask为null，说明worker要从队列中去取任务。</p>
      * Checks if a new worker can be added with respect to current
      * pool state and the given bound (either core or maximum). If so,
      * the worker count is adjusted accordingly, and, if possible, a
@@ -1351,7 +1353,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * executor has been shutdown or because its capacity has been reached,
      * the task is handled by the current {@link RejectedExecutionHandler}.
      *
-     * @param command the task to execute
+     * @param command the task to execute 我觉得这个参数名统一叫作task就好了啊！
      * @throws RejectedExecutionException at discretion of
      *         {@code RejectedExecutionHandler}, if the task
      *         cannot be accepted for execution
@@ -1382,21 +1384,23 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
          */
         int c = ctl.get(); // 获取 control 信息
 
-        // 工作线程数 < 核心线程数
+        // 1、创建核心线程
         if (workerCountOf(c) < corePoolSize) {
-            if (addWorker(command, true)) // 注意这里的参数
+            if (addWorker(command, true)) // 注意这里的参数, true 代表创建核心线程
                 return;
             c = ctl.get();
         }
 
-        // 先队列中插入任务
+        // 2、将任务放入队列
         if (isRunning(c) && workQueue.offer(command)) {
-            int recheck = ctl.get();
-            if (! isRunning(recheck) && remove(command))
-                reject(command);
-            else if (workerCountOf(recheck) == 0)
-                addWorker(null, false);
+            int recheck = ctl.get(); // 再次检查状态
+            if (! isRunning(recheck) && remove(command)) // remove 成功说明任务还没有执行，失败则是任务已经被worker取走了。
+                reject(command); // 通知调用方。
+            else if (workerCountOf(recheck) == 0) // 加入队列后，发现没有工作线程
+                addWorker(null, false); // 创建非核心线程，这个线程会去处理队列中的任务。
         }
+
+        // 3、创建非核心线程
         else if (!addWorker(command, false))
             reject(command);
     }
@@ -1778,12 +1782,13 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     }
 
     /**
+     * <p>从队列中移除任务。</p>
      * Removes this task from the executor's internal queue if it is
      * present, thus causing it not to be run if it has not already
      * started.
      *
      * <p>This method may be useful as one part of a cancellation
-     * scheme.  It may fail to remove tasks that have been converted
+     * scheme.(在cancel模式下很有用。)  It may fail to remove tasks that have been converted
      * into other forms before being placed on the internal queue.
      * For example, a task entered using {@code submit} might be
      * converted into a form that maintains {@code Future} status.

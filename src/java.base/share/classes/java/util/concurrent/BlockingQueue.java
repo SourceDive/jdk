@@ -306,6 +306,8 @@ public interface BlockingQueue<E> extends Queue<E> {
     int remainingCapacity();
 
     /**
+     * <p>从队列中移除给定的元素。</p>
+     * <p>成功：true</p>
      * Removes a single instance of the specified element from this queue,
      * if it is present.  More formally, removes an element {@code e} such
      * that {@code o.equals(e)}, if this queue contains one or more such
