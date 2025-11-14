@@ -39,8 +39,8 @@ import java.util.Collection;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
- * <p>信号信量。</p>
- *  * <p>信号量只有总量的概念。获取到一个permit后，总量减少1个，返回给用户只有true或false，并不会返回给用户到底是哪个许可证。</p>
+ * <p>信号量。</p>
+ * <p>信号量只有总量的概念。获取到一个permit后，总量减少1个，返回给用户只有true或false，并不会返回给用户到底是哪个许可证。</p>
  * A counting semaphore.  Conceptually, a semaphore maintains a set of
  * permits(许可).  Each {@link #acquire} blocks if necessary until a permit is
  * available, and then takes it.  Each {@link #release} adds a permit,
@@ -176,20 +176,25 @@ public class Semaphore implements java.io.Serializable {
         private static final long serialVersionUID = 1192457210091910933L;
 
         Sync(int permits) {
+            // 初始化许可证总量。
             setState(permits);
         }
 
+        /**
+         * 获取许可证重量。
+         */
         final int getPermits() {
             return getState();
         }
 
         final int nonfairTryAcquireShared(int acquires) {
             for (;;) {
+                // 不需要排队。
                 int available = getState();
                 int remaining = available - acquires;
                 if (remaining < 0 ||
                     compareAndSetState(available, remaining))
-                    return remaining;
+                    return remaining; // 返回剩余的许可证数量。
             }
         }
 
@@ -225,6 +230,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>非公平同步器。</p>
      * NonFair version
      */
     static final class NonfairSync extends Sync {
@@ -240,6 +246,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>公平同步器。</p>
      * Fair version
      */
     static final class FairSync extends Sync {
@@ -251,6 +258,7 @@ public class Semaphore implements java.io.Serializable {
 
         protected int tryAcquireShared(int acquires) {
             for (;;) {
+                // 需要排队。
                 if (hasQueuedPredecessors())
                     return -1;
                 int available = getState();
@@ -290,6 +298,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>获取一个许可证，没有则阻塞。</p>
      * Acquires a permit from this semaphore, blocking until one is
      * available, or the thread is {@linkplain Thread#interrupt interrupted}.
      *
@@ -668,6 +677,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>是否是公平同步器。</p>
      * Returns {@code true} if this semaphore has fairness set true.
      *
      * @return {@code true} if this semaphore has fairness set true
@@ -677,6 +687,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * <p>是否有排队的线程。</p>
      * Queries whether any threads are waiting to acquire. Note that
      * because cancellations may occur at any time, a {@code true}
      * return does not guarantee that any other thread will ever

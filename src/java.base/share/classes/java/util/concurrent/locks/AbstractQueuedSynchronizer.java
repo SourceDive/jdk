@@ -400,9 +400,9 @@ public abstract class AbstractQueuedSynchronizer
      */
     static final class Node {
         /** Marker to indicate a node is waiting in shared mode */
-        static final Node SHARED = new Node(); // 共享模式
+        static final Node SHARED = new Node(); // 共享模式: 多个线程可以同时成功。
         /** Marker to indicate a node is waiting in exclusive mode */
-        static final Node EXCLUSIVE = null; // 排他模式
+        static final Node EXCLUSIVE = null; // 独占模式: 同一时间只能有一个线程成功。
 
         /// waitStatus 枚举值
         /** waitStatus value to indicate thread has cancelled. */
@@ -1112,7 +1112,7 @@ public abstract class AbstractQueuedSynchronizer
     // Main exported methods
 
     /**
-     * <p>获取独占锁。</p>
+     * <p>尝试获取(独占模式)。</p>
      * Attempts to acquire in exclusive mode. This method should query
      * if the state of the object permits it to be acquired in the
      * exclusive mode, and if so to acquire it.
@@ -1143,7 +1143,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>释放独占锁。</p>
+     * <p>尝试释放(独占模式)。</p>
      * Attempts to set the state to reflect a release in exclusive
      * mode.
      *
@@ -1170,7 +1170,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>获取共享锁。</p>
+     * <p>尝试获取(共享模式)。</p>
      * Attempts to acquire in shared mode. This method should query if
      * the state of the object permits it to be acquired in the shared
      * mode, and if so to acquire it.
@@ -1207,7 +1207,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>释放共享锁。</p>
+     * <p>尝试释放(共享模式)。</p>
      * Attempts to set the state to reflect a release in shared mode.
      *
      * <p>This method is always invoked by the thread performing release.
@@ -1252,7 +1252,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>获取独占锁。</p>
+     * <p>获取(独占模式)。</p>
      * <p>失败，进入队列。</p>
      * Acquires in exclusive mode, ignoring interrupts.  Implemented
      * by invoking at least once {@link #tryAcquire},
@@ -1272,6 +1272,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>获取(独占模式)</p>
      * Acquires in exclusive mode, aborting if interrupted.
      * Implemented by first checking interrupt status, then invoking
      * at least once {@link #tryAcquire}, returning on
@@ -1294,6 +1295,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>获取(独占模式)</p>
      * Attempts to acquire in exclusive mode, aborting if interrupted,
      * and failing if the given timeout elapses.  Implemented by first
      * checking interrupt status, then invoking at least once {@link
@@ -1319,7 +1321,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>释放独占锁。</p>
+     * <p>释放(独占模式)。</p>
      * Releases in exclusive mode.  Implemented by unblocking one or
      * more threads if {@link #tryRelease} returns true.
      * This method can be used to implement method {@link Lock#unlock}.
@@ -1340,6 +1342,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * 获取(共享模式)
      * Acquires in shared mode, ignoring interrupts.  Implemented by
      * first invoking at least once {@link #tryAcquireShared},
      * returning on success.  Otherwise the thread is queued, possibly
@@ -1356,6 +1359,8 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>获取(共享模式)。</p>
+     * <p>失败：线程排队。</p>
      * Acquires in shared mode, aborting if interrupted.  Implemented
      * by first checking interrupt status, then invoking at least once
      * {@link #tryAcquireShared}, returning on success.  Otherwise the
@@ -1377,6 +1382,8 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>获取(共享模式)。</p>
+     * <p>获取失败：线程排队。</p>
      * Attempts to acquire in shared mode, aborting if interrupted, and
      * failing if the given timeout elapses.  Implemented by first
      * checking interrupt status, then invoking at least once {@link
@@ -1401,6 +1408,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>释放(共享模式)</p>
      * Releases in shared mode.  Implemented by unblocking one or more
      * threads if {@link #tryReleaseShared} returns true.
      *
@@ -1420,7 +1428,7 @@ public abstract class AbstractQueuedSynchronizer
     // Queue inspection methods
 
     /**
-     * <p>是否有等待中的线程。</p>
+     * <p>是否有排队的线程。</p>
      * Queries whether any threads are waiting to acquire. Note that
      * because cancellations due to interrupts and timeouts may occur
      * at any time, a {@code true} return does not guarantee that any
@@ -1604,7 +1612,7 @@ public abstract class AbstractQueuedSynchronizer
     // Instrumentation and monitoring methods
 
     /**
-     * <p>获取等待队列中的线程数量。</p>
+     * <p>获取队列中排队的线程数量。</p>
      * <p>注意这里是从后向前去遍历。</p>
      * Returns an estimate of the number of threads waiting to
      * acquire.  The value is only an estimate because the number of
