@@ -38,7 +38,7 @@ package java.util.concurrent;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
- * <p>可以使一个或多个线程等待</p>
+ * <p>可以使一个或多个线程等待。</p>
  * A synchronization aid that allows one or more threads to wait until
  * a set of operations being performed in other threads completes.
  *

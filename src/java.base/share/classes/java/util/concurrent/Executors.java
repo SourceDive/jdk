@@ -48,6 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import sun.security.util.SecurityConstants;
 
 /**
+ * <p>Executor工厂。</p>
  * Factory and utility methods for {@link Executor}, {@link
  * ExecutorService}, {@link ScheduledExecutorService}, {@link
  * ThreadFactory}, and {@link Callable} classes defined in this

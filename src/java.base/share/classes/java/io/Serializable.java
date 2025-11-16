@@ -27,6 +27,8 @@ package java.io;
 
 // 标记接口
 /**
+ * <p>序列化。</p>
+ * <p>对象和流的转换。</p>
  * Serializability of a class is enabled by the class implementing the
  * java.io.Serializable interface.
  *

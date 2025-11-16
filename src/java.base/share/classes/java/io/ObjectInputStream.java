@@ -49,6 +49,7 @@ import jdk.internal.misc.Unsafe;
 import sun.reflect.misc.ReflectUtil;
 
 /**
+ * <p>方向：stream -> object.</p>
  * An ObjectInputStream deserializes primitive data and objects previously
  * written using an ObjectOutputStream.
  *

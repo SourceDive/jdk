@@ -39,6 +39,7 @@ import static java.io.ObjectStreamClass.processQueue;
 import sun.reflect.misc.ReflectUtil;
 
 /**
+ * <p>方向：object -> stream.</p>
  * An ObjectOutputStream writes primitive data types and graphs of Java objects
  * to an OutputStream.  The objects can be read (reconstituted) using an
  * ObjectInputStream.  Persistent storage of objects can be accomplished by
@@ -1176,7 +1177,7 @@ public class ObjectOutputStream
             } else if (obj instanceof Enum) {
                 writeEnum((Enum<?>) obj, desc, unshared);
             } else if (obj instanceof Serializable) {
-                writeOrdinaryObject(obj, desc, unshared);
+                writeOrdinaryObject(obj, desc, unshared); // 序列化对象
             } else {
                 if (extendedDebugInfo) {
                     throw new NotSerializableException(
