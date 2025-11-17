@@ -57,6 +57,9 @@ public class ReferenceQueue<T> {
     private volatile Reference<? extends T> head;
     private long queueLength = 0;
 
+    /**
+     * 入队。
+     */
     boolean enqueue(Reference<? extends T> r) { /* Called only by Reference class */
         synchronized (lock) {
             // Check that since getting the lock this reference hasn't already been

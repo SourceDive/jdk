@@ -27,6 +27,7 @@ package java.lang.ref;
 
 
 /**
+ * <p>软引用。</p>
  * Soft reference objects, which are cleared at the discretion of the garbage
  * collector in response to memory demand.  Soft references are most often used
  * to implement memory-sensitive caches.

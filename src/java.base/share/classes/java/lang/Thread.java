@@ -242,6 +242,7 @@ class Thread implements Runnable {
         }
     }
 
+    /// 线程优先级。
     /**
      * The minimum priority that a thread can have.
      */
@@ -1818,7 +1819,7 @@ class Thread implements Runnable {
         BLOCKED,
 
         /**
-         * <p>等待</p>
+         * <p>无限期等待</p>
          * Thread state for a waiting thread.
          * A thread is in the waiting state due to calling one of the
          * following methods:
@@ -1840,6 +1841,7 @@ class Thread implements Runnable {
         WAITING,
 
         /**
+         * <p>有限期等待</p>
          * Thread state for a waiting thread with a specified waiting time.
          * A thread is in the timed waiting state due to calling one of
          * the following methods with a specified positive waiting time:

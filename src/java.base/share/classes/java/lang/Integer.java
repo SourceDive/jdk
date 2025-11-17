@@ -40,6 +40,7 @@ import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 
 /**
+ * <p>Integer也是final的。</p>
  * The {@code Integer} class wraps a value of the primitive type
  * {@code int} in an object. An object of type {@code Integer}
  * contains a single field whose type is {@code int}.

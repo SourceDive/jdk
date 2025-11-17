@@ -27,6 +27,8 @@ package java.lang.ref;
 
 
 /**
+ * <p>虚引用。</p>
+ * <p>这里的Phantom：ghost 幽灵的意思。</p>
  * Phantom reference objects, which are enqueued after the collector
  * determines that their referents may otherwise be reclaimed.  Phantom
  * references are most often used to schedule post-mortem cleanup actions.

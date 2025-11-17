@@ -27,6 +27,7 @@ package java.lang.ref;
 
 
 /**
+ * <p>弱引用。</p>
  * Weak reference objects, which do not prevent their referents from being
  * made finalizable, finalized, and then reclaimed.  Weak references are most
  * often used to implement canonicalizing mappings.
