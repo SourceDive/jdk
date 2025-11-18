@@ -209,6 +209,8 @@ public class ThreadLocal<T> {
     }
 
     /**
+     * <p>给调用者(ThreadLocal实例)设置value.</p>
+     * <p>caller就是key.</p>
      * Sets the current thread's copy of this thread-local variable
      * to the specified value.  Most subclasses will have no need to
      * override this method, relying solely on the {@link #initialValue}
@@ -309,6 +311,10 @@ public class ThreadLocal<T> {
     }
 
     /**
+     * <p>自定义的hash map, 不会暴露出去。</p>
+     * <p>这个map可以存放当前线程的多个Threadlocal实例。</p>
+     * <p>为key使用了 weak reference.</p>
+     * <p>具体原因下面说了，这里贴上来强调下：To help deal with very large and long-lived usages, the hash table entries use WeakReferences for keys.</p>
      * ThreadLocalMap is a customized hash map suitable only for
      * maintaining thread local values. No operations are exported
      * outside of the ThreadLocal class. The class is package private to
@@ -330,7 +336,8 @@ public class ThreadLocal<T> {
          */
         static class Entry extends WeakReference<ThreadLocal<?>> {
             /** The value associated with this ThreadLocal. */
-            Object value; // 以ThreadLocal对象为键
+            Object value; // key: ThreadLocal对象, value: value
+                          // 注意这里的 value 是 strong reference.
 
             Entry(ThreadLocal<?> k, Object v) {
                 super(k);

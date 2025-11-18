@@ -640,6 +640,7 @@ public class Runtime {
     public native long maxMemory();
 
     /**
+     * <p>触发垃圾回收。</p>
      * Runs the garbage collector.
      * Calling this method suggests that the Java virtual machine expend
      * effort toward recycling unused objects in order to make the memory

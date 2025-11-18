@@ -399,7 +399,7 @@ public abstract class Reference<T> {
     }
 
     Reference(T referent, ReferenceQueue<? super T> queue) {
-        this.referent = referent;
+        this.referent = referent; // 建立指向关系。
         this.queue = (queue == null) ? ReferenceQueue.NULL : queue;
     }
 
