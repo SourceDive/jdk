@@ -31,6 +31,7 @@ import java.util.Spliterators;
 import java.util.function.Consumer;
 
 /**
+ * <p>for-each语法糖。</p>
  * Implementing this interface allows an object to be the target of the enhanced
  * {@code for} statement (sometimes called the "for-each loop" statement).
  *

@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import jdk.internal.misc.VM;
 
 /**
+ * <p>引用队列。</p>
  * Reference queues, to which registered reference objects are appended by the
  * garbage collector after the appropriate reachability changes are detected.
  *
@@ -109,6 +110,7 @@ public class ReferenceQueue<T> {
     }
 
     /**
+     * <p>出队。</p>
      * Polls this queue to see if a reference object is available.  If one is
      * available without further delay then it is removed from the queue and
      * returned.  Otherwise this method immediately returns {@code null}.

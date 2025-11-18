@@ -148,6 +148,8 @@ public abstract class Reference<T> {
      * bypassing the pending-Reference list.
      */
 
+    // 单词英文含义：所指。being referring to.
+    // 存放目标对象。
     private T referent;         /* Treated specially by GC */
 
     /* The queue this reference gets enqueued to by GC notification or by
@@ -321,6 +323,7 @@ public abstract class Reference<T> {
     /* -- Referent accessor and setters -- */
 
     /**
+     * <p>返回引用对象的所指对象。</p>
      * Returns this reference object's referent.  If this reference object has
      * been cleared, either by the program or by the garbage collector, then
      * this method returns <code>null</code>.

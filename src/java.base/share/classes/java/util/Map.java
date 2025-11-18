@@ -392,6 +392,7 @@ public interface Map<K, V> {
     Set<Map.Entry<K, V>> entrySet();
 
     /**
+     * <p>map entry: 键值对。</p>
      * A map entry (key-value pair).  The {@code Map.entrySet} method returns
      * a collection-view of the map, whose elements are of this class.  The
      * <i>only</i> way to obtain a reference to a map entry is from the
@@ -406,6 +407,7 @@ public interface Map<K, V> {
      */
     interface Entry<K, V> {
         /**
+         * <p>返回entry的key.</p>
          * Returns the key corresponding to this entry.
          *
          * @return the key corresponding to this entry
@@ -416,6 +418,7 @@ public interface Map<K, V> {
         K getKey();
 
         /**
+         * <p>返回entry的value.</p>
          * Returns the value corresponding to this entry.  If the mapping
          * has been removed from the backing map (by the iterator's
          * {@code remove} operation), the results of this call are undefined.
@@ -428,6 +431,7 @@ public interface Map<K, V> {
         V getValue();
 
         /**
+         * <p>替换entry的value.</p>
          * Replaces the value corresponding to this entry with the specified
          * value (optional operation).  (Writes through to the map.)  The
          * behavior of this call is undefined if the mapping has already been
