@@ -29,6 +29,7 @@ import java.util.Arrays;
 import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
+ * <p>第一句就提到了线程安全。大多方法都加了 synchronized 关键字。</p>
  * A thread-safe, mutable sequence of characters.
  * A string buffer is like a {@link String}, but can be modified. At any
  * point in time it contains some particular sequence of characters, but

@@ -28,6 +28,7 @@ package java.lang;
 import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
+ * <p>不保证同步。</p>
  * A mutable sequence of characters.  This class provides an API compatible
  * with {@code StringBuffer}, but with no guarantee of synchronization.
  * This class is designed for use as a drop-in replacement for
