@@ -89,6 +89,7 @@ import sun.reflect.misc.ReflectUtil;
 
 /**
  * <p>注意，这里的 class 是 Type接口的实现。</p>
+ * <p>代表了 class 和 interface.</p>
  * Instances of the class {@code Class} represent classes and interfaces
  * in a running Java application. An enum type is a kind of class and an
  * annotation type is a kind of interface. Every array also
@@ -2206,6 +2207,8 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
+     * <p>获取类中声明的所有field，以数组形式返回。</p>
+     * <p>没有任务field, 返回空数组。</p>
      * Returns an array of {@code Field} objects reflecting all the fields
      * declared by the class or interface represented by this
      * {@code Class} object. This includes public, protected, default

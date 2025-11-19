@@ -41,6 +41,7 @@ import java.lang.annotation.AnnotationFormatError;
 import java.util.StringJoiner;
 
 /**
+ * <p>类的构造函数。</p>
  * {@code Constructor} provides information about, and access to, a single
  * constructor for a class.
  *

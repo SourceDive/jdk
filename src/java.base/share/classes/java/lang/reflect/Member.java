@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 /**
+ * <p>类或接口的成员。</p>
  * Member is an interface that reflects identifying information about
  * a single member (a field or a method) or a constructor.
  *
@@ -53,6 +54,7 @@ interface Member {
     public static final int DECLARED = 1;
 
     /**
+     * <p>返回声明该成员的 class 对象。</p>
      * Returns the Class object representing the class or interface
      * that declares the member or constructor represented by this Member.
      *
@@ -62,6 +64,7 @@ interface Member {
     public Class<?> getDeclaringClass();
 
     /**
+     * <p>返回该成员的名称。</p>
      * Returns the simple name of the underlying member or constructor
      * represented by this Member.
      *
@@ -70,6 +73,7 @@ interface Member {
     public String getName();
 
     /**
+     * <p>返回该成员的修饰符(public/private)</p>
      * Returns the Java language modifiers for the member or
      * constructor represented by this Member, as an integer.  The
      * Modifier class should be used to decode the modifiers in

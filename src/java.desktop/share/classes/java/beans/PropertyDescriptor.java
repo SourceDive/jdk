@@ -33,6 +33,7 @@ import com.sun.beans.introspect.PropertyInfo;
 import sun.reflect.misc.ReflectUtil;
 
 /**
+ * <p>属性描述符。</p>
  * A PropertyDescriptor describes one property that a Java Bean
  * exports via a pair of accessor methods.
  * @since 1.1

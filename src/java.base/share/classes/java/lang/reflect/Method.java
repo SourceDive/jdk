@@ -45,6 +45,7 @@ import java.nio.ByteBuffer;
 import java.util.StringJoiner;
 
 /**
+ * <p>类的方法。</p>
  * A {@code Method} provides information about, and access to, a single method
  * on a class or interface.  The reflected method may be a class method
  * or an instance method (including an abstract method).
