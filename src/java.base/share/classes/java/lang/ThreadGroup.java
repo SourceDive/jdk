@@ -315,6 +315,7 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
+     * <p>返回当前线程组和子线程组中活动的线程数量。</p>
      * Returns an estimate of the number of active threads in this thread
      * group and its subgroups. Recursively iterates over all subgroups in
      * this thread group.
@@ -869,6 +870,7 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
+     * <p>添加给定的线程到线程组中。</p>
      * Adds the specified thread to this thread group.
      *
      * <p> Note: This method is called from both library code

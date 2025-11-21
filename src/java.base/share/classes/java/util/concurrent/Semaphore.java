@@ -448,7 +448,8 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
-     * <p>获取指定数目的许可证。没有则阻塞。</p>
+     * <p>获取指定数目的许可证。</p>
+     * <p>没有则阻塞</p>
      * Acquires the given number of permits from this semaphore,
      * blocking until all are available,
      * or the thread is {@linkplain Thread#interrupt interrupted}.

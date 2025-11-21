@@ -799,7 +799,7 @@ class Thread implements Runnable {
          *
          * A zero status value corresponds to state "NEW".
          */
-        if (threadStatus != 0)
+        if (threadStatus != 0) // 0: 新建状态
             throw new IllegalThreadStateException();
 
         /* Notify the group that this thread is about to be started

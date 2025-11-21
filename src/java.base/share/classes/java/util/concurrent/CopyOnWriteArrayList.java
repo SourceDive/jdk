@@ -54,8 +54,9 @@ import java.util.function.UnaryOperator;
 import jdk.internal.access.SharedSecrets;
 
 /**
+ * <p>ArrayList 线程安全的变体。</p>
  * A thread-safe variant of {@link java.util.ArrayList} in which all mutative
- * operations ({@code add}, {@code set}, and so on) are implemented by
+ * operations(态变操作) ({@code add}, {@code set}, and so on) are implemented by
  * making a fresh copy of the underlying array.
  *
  * <p>This is ordinarily too costly, but may be <em>more</em> efficient
@@ -108,14 +109,14 @@ public class CopyOnWriteArrayList<E>
      * from CopyOnWriteArraySet class.
      */
     final Object[] getArray() {
-        return array;
+        return array; // 有volatile修饰，保证是最新的。
     }
 
     /**
      * Sets the array.
      */
     final void setArray(Object[] a) {
-        array = a;
+        array = a; // 引用的赋值是原子操作。
     }
 
     /**
@@ -391,6 +392,7 @@ public class CopyOnWriteArrayList<E>
     }
 
     /**
+     * <p>读，无锁。</p>
      * {@inheritDoc}
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
@@ -400,6 +402,8 @@ public class CopyOnWriteArrayList<E>
     }
 
     /**
+     * <p>写，有锁。</p>
+     * <p>更新指定位置的元素。</p>
      * Replaces the element at the specified position in this list with the
      * specified element.
      *
@@ -407,9 +411,10 @@ public class CopyOnWriteArrayList<E>
      */
     public E set(int index, E element) {
         synchronized (lock) {
-            Object[] es = getArray();
+            Object[] es/*elements*/ = getArray();
             E oldValue = elementAt(es, index);
 
+            // 值发生变化，才进行变更。
             if (oldValue != element) {
                 es = es.clone();
                 es[index] = element;

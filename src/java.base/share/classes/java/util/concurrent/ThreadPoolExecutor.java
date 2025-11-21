@@ -1301,7 +1301,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                               long keepAliveTime,
                               TimeUnit unit,
                               BlockingQueue<Runnable> workQueue,
-                              RejectedExecutionHandler handler) {
+                              RejectedExecutionHandler handler) { // 执行拒绝策略的对象
         this(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,
              Executors.defaultThreadFactory(), handler);
     }

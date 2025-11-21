@@ -33,6 +33,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
+ * <p>方法有被 synchronized 修饰。</p>
  * The {@code Vector} class implements a growable array of
  * objects. Like an array, it contains components that can be
  * accessed using an integer index. However, the size of a
