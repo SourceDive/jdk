@@ -26,6 +26,7 @@
 package java.util;
 
 /**
+ * <p>定时任务。</p>
  * A task that can be scheduled for one-time or repeated execution by a
  * {@link Timer}.
  *

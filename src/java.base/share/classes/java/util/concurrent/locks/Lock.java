@@ -238,8 +238,8 @@ public interface Lock {
     void lockInterruptibly() throws InterruptedException;
 
     /**
-     * <p>尝试获取lock。获取到返回true.</p>
-     * <p>获取不到返回false.</p>
+     * <p>尝试获取锁。</p>
+     * <p>获取到返回true; 获取不到返回false.</p>
      * <p>非阻塞。</p>
      * Acquires the lock only if it is free at the time of invocation.
      *

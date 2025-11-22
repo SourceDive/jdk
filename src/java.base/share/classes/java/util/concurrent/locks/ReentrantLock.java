@@ -350,8 +350,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
-     * <p>尝试获取锁，成功返回true</p>
-     * <p>失败返回false, 不会进入队列。</p>
+     * <p>尝试获取锁。</p>
+     * <p>成功返回true; 失败返回false, 不会进入队列。</p>
      * Acquires the lock only if it is not held by another thread at the time
      * of invocation.
      *

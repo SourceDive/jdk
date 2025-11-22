@@ -952,7 +952,7 @@ class Thread implements Runnable {
     }
 
     /**
-     * <p>中断此线程。</p>
+     * <p>中断当前线程。</p>
      * Interrupts this thread.
      *
      * <p> Unless the current thread is interrupting itself, which is
@@ -1011,7 +1011,7 @@ class Thread implements Runnable {
     }
 
     /**
-     * <p>当前线程是否已被中断。</p>
+     * <p>测试当前线程是否已被中断。</p>
      * Tests whether the current thread has been interrupted.  The
      * <i>interrupted status</i> of the thread is cleared by this method.  In
      * other words, if this method were to be called twice in succession, the
@@ -1033,6 +1033,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>测试当前线程是否已被中断。</p>
      * Tests whether this thread has been interrupted.  The <i>interrupted
      * status</i> of the thread is unaffected by this method.
      *
@@ -1050,6 +1051,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>测试当前线程是否已被中断。</p>
      * Tests if some Thread has been interrupted.  The interrupted state
      * is reset or not based on the value of ClearInterrupted that is
      * passed.
@@ -1058,6 +1060,7 @@ class Thread implements Runnable {
     private native boolean isInterrupted(boolean ClearInterrupted);
 
     /**
+     * <p>测试当前线程是否存活。</p>
      * Tests if this thread is alive. A thread is alive if it has
      * been started and has not yet died.
      *
