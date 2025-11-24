@@ -134,7 +134,7 @@ public interface Future<V> {
     boolean isDone();
 
     /**
-     * <p>等待，一直到计算完毕。</p>
+     * <p>无限期等待，一直到计算完毕。</p>
      * Waits if necessary for the computation to complete, and then
      * retrieves its result.
      *
@@ -148,6 +148,7 @@ public interface Future<V> {
     V get() throws InterruptedException, ExecutionException;
 
     /**
+     * <p>有限期等待。</p>
      * Waits if necessary for at most the given time for the computation
      * to complete, and then retrieves its result, if available.
      *

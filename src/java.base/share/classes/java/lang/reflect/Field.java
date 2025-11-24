@@ -66,12 +66,12 @@ import sun.reflect.annotation.TypeAnnotationParser;
 public final
 class Field extends AccessibleObject implements Member {
 
-    private Class<?>            clazz;
+    private Class<?>            clazz; // 声明字段所在的类。
     private int                 slot;
     // This is guaranteed to be interned by the VM in the 1.4
     // reflection implementation
     private String              name;
-    private Class<?>            type;
+    private Class<?>            type; // 字段类型
     private int                 modifiers;
     // Generics and annotations support
     private transient String    signature;

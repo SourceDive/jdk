@@ -48,6 +48,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 /**
  * <p>JVM允许应用同时运行多个线程。</p>
  * <p>线程优先级：[1, 10]</p>
+ * <p>此类中的 native 方法实现了操作系统层面的线程控制。</p>
  * A <i>thread</i> is a thread of execution in a program. The Java
  * Virtual Machine allows an application to have multiple threads of
  * execution running concurrently.

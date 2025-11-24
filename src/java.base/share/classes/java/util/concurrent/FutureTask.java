@@ -40,6 +40,7 @@ import java.lang.invoke.VarHandle;
 import java.util.concurrent.locks.LockSupport;
 
 /**
+ * <p>可撤销的异步计算。</p>
  * A cancellable asynchronous computation.  This class provides a base
  * implementation of {@link Future}, with methods to start and cancel
  * a computation, query to see if the computation is complete, and
@@ -262,7 +263,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                 V result;
                 boolean ran;
                 try {
-                    result = c.call();
+                    result = c.call(); // 任务放在run()方法中执行，保证任务是在子线程中执行。
                     ran = true;
                 } catch (Throwable ex) {
                     result = null;
