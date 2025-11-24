@@ -34,6 +34,10 @@ import java.io.ObjectInputStream;
 import javax.management.loading.ClassLoaderRepository;
 
 /**
+ * <p>用作监控使用。</p>
+ * <p>MBeanServer 是 Java JMX（Java Management
+ * Extensions）架构的核心组件，它充当一个管理和监控的中间人。</p>
+ * <p>JMX 客户端：如 JConsole、JVisualVM、第三方监控系统等</p>
  * <p>This is the interface for MBean manipulation on the agent
  * side. It contains the methods necessary for the creation,
  * registration, and deletion of MBeans as well as the access methods
