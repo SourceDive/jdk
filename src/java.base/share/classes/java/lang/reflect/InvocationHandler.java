@@ -26,9 +26,12 @@
 package java.lang.reflect;
 
 /**
+ * <p>调用处理器。</p>
  * {@code InvocationHandler} is the interface implemented by
  * the <i>invocation handler</i> of a proxy instance.
  *
+ * <p>每个代理对象都关联着一个调用处理器。</p>
+ * <p>调用请求会通过代理对象派发到对应的调用处理器上。</p>
  * <p>Each proxy instance has an associated invocation handler.
  * When a method is invoked on a proxy instance, the method
  * invocation is encoded and dispatched to the {@code invoke}

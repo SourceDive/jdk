@@ -1372,6 +1372,7 @@ class Thread implements Runnable {
 
     /**
      * Waits for this thread to die.
+     * <p>相当于子流程要合并到主流程中了，但是子流程要先执行完毕。</p>
      *
      * <p> An invocation of this method behaves in exactly the same
      * way as the invocation
