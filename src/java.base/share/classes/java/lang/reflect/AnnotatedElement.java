@@ -38,6 +38,7 @@ import sun.reflect.annotation.AnnotationSupport;
 import sun.reflect.annotation.AnnotationType;
 
 /**
+ * <p>代表一个被注解标记的元素。</p>
  * Represents an annotated element of the program currently running in this
  * VM.  This interface allows annotations to be read reflectively.  All
  * annotations returned by methods in this interface are immutable and
