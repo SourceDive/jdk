@@ -410,6 +410,7 @@ class Thread implements Runnable {
 
         this.name = name;
 
+        // 构造时的 parent 就是当前线程。
         Thread parent = currentThread();
         SecurityManager security = System.getSecurityManager();
         if (g == null) {
@@ -720,6 +721,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>创建线程（可以继承父线程threadlocal变量）</p>
      * Allocates a new {@code Thread} object so that it has {@code target}
      * as its run object, has the specified {@code name} as its name,
      * belongs to the thread group referred to by {@code group}, has
@@ -762,7 +764,7 @@ class Thread implements Runnable {
      * @param  inheritThreadLocals
      *         if {@code true}, inherit initial values for inheritable
      *         thread-locals from the constructing thread, otherwise no initial
-     *         values are inherited
+     *         values are inherited 是否要传递主线程中的 threadlocal 变量。
      *
      * @throws  SecurityException
      *          if the current thread cannot create a thread in the specified
@@ -1539,6 +1541,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>当前线程是否持有给定对象的监视器锁。</p>
      * Returns {@code true} if and only if the current thread holds the
      * monitor lock on the specified object.
      *
@@ -1884,6 +1887,8 @@ class Thread implements Runnable {
     // Added in JSR-166
 
     /**
+     * <p>未捕获异常处理器。</p>
+     * <p>子线程异常可以通过这个来捕获。</p>
      * Interface for handlers invoked when a {@code Thread} abruptly
      * terminates due to an uncaught exception.
      * <p>When a thread is about to terminate due to an uncaught exception
@@ -1995,6 +2000,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>子线程异常可以通过这个来捕获。</p>
      * Set the handler invoked when this thread abruptly terminates
      * due to an uncaught exception.
      * <p>A thread can take full control of how it responds to uncaught

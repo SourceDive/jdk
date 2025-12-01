@@ -641,6 +641,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * <p>入队。</p>
+     * <p>注意这是个私有方法，不是给外部提供的api.</p>
      * Inserts node into queue, initializing if necessary. See picture above.
      * @param node the node to insert
      * @return node's predecessor
@@ -655,6 +656,7 @@ public abstract class AbstractQueuedSynchronizer
                     return oldTail;
                 }
             } else {
+                // 初始化同步队列。
                 initializeSyncQueue();
             }
         }
@@ -720,7 +722,7 @@ public abstract class AbstractQueuedSynchronizer
          */
         // 找到一个合适的结点，需要遍历寻找。
         Node s = node.next;
-        if (s == null || s.waitStatus > 0) {
+        if (s == null || s.waitStatus > 0) { // 为空 or 被取消
             s = null;
             for (Node p = tail; p != node && p != null; p = p.prev)
                 if (p.waitStatus <= 0)
@@ -2365,6 +2367,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>初始化同步队列。</p>
      * Initializes head and tail fields on first contention.
      */
     private final void initializeSyncQueue() {
@@ -2374,6 +2377,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>设置队列尾结点。</p>
      * CASes tail field.
      */
     private final boolean compareAndSetTail(Node expect, Node update) {

@@ -401,6 +401,7 @@ public class ThreadLocal<T> {
         }
 
         /**
+         * <p>继承父线程中的 threadloal 变量。</p>
          * Construct a new map including all Inheritable ThreadLocals
          * from given parent map. Called only by createInheritedMap.
          *
@@ -413,7 +414,7 @@ public class ThreadLocal<T> {
             table = new Entry[len];
 
             for (Entry e : parentTable) {
-                if (e != null) {
+                if (e != null) { // 复制不为null的 entry.
                     @SuppressWarnings("unchecked")
                     ThreadLocal<Object> key = (ThreadLocal<Object>) e.get();
                     if (key != null) {

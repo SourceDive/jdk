@@ -345,9 +345,11 @@ public interface Lock {
     void unlock();
 
     /**
+     * <p>返回和当前锁实例绑定的等待条件实例。</p>
      * Returns a new {@link Condition} instance that is bound to this
      * {@code Lock} instance.
      *
+     * <p>在等待此条件之前，当前线程必须持有锁。</p>
      * <p>Before waiting on the condition the lock must be held by the
      * current thread.
      * A call to {@link Condition#await()} will atomically release the lock

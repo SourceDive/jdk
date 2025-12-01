@@ -35,6 +35,7 @@ import java.security.ProtectionDomain;
 
 
 /**
+ * <p>java提供的后门，直接操作底层资源。</p>
  * A collection of methods for performing low-level, unsafe operations.
  * Although the class and all methods are public, use of this class is
  * limited because only trusted code can obtain instances of it.

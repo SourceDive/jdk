@@ -39,6 +39,7 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * <p>等待条件。需要和lock一起使用。</p>
  * {@code Condition} factors out the {@code Object} monitor
  * methods ({@link Object#wait() wait}, {@link Object#notify notify}
  * and {@link Object#notifyAll notifyAll}) into distinct objects to
@@ -180,6 +181,7 @@ import java.util.concurrent.TimeUnit;
 public interface Condition {
 
     /**
+     * <p>无限期等待。</p>
      * Causes the current thread to wait until it is signalled or
      * {@linkplain Thread#interrupt interrupted}.
      *
@@ -268,6 +270,7 @@ public interface Condition {
     void awaitUninterruptibly();
 
     /**
+     * <p>有限期等待。</p>
      * Causes the current thread to wait until it is signalled or interrupted,
      * or the specified waiting time elapses.
      *
@@ -376,6 +379,7 @@ public interface Condition {
     boolean await(long time, TimeUnit unit) throws InterruptedException;
 
     /**
+     * <p>有限期等待。</p>
      * Causes the current thread to wait until it is signalled or interrupted,
      * or the specified deadline elapses.
      *
@@ -453,6 +457,7 @@ public interface Condition {
     boolean awaitUntil(Date deadline) throws InterruptedException;
 
     /**
+     * <p>唤醒等待的线程。</p>
      * Wakes up one waiting thread.
      *
      * <p>If any threads are waiting on this condition then one
@@ -471,6 +476,7 @@ public interface Condition {
     void signal();
 
     /**
+     * <p>唤醒所有等待的线程。</p>
      * Wakes up all waiting threads.
      *
      * <p>If any threads are waiting on this condition then they are

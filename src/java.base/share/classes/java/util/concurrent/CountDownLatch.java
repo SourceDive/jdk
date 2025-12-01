@@ -163,7 +163,7 @@ public class CountDownLatch {
     private static final class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = 4982264981922014374L;
 
-        Sync(int count) {
+        Sync(int count) { // 共享模式。
             setState(count);
         }
 

@@ -554,6 +554,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     /**
+     * <p>获取读锁。</p>
      * Non-exclusively acquires the lock if it is immediately available.
      *
      * @return a read stamp that can be used to unlock or convert mode,
