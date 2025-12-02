@@ -27,6 +27,7 @@
 
 #include "oops/oop.hpp"
 
+// java 对象头结构。
 // The markOop describes the header of an object.
 //
 // Note that the mark is not a real oop but just a word.
