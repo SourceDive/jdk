@@ -32,6 +32,7 @@ import java.util.function.BiFunction;
 import jdk.internal.access.SharedSecrets;
 
 /**
+ * <p>各个更改方法都是同步方法，每次操作都会锁实例。性能显然低下。</p>
  * This class implements a hash table, which maps keys to values. Any
  * non-{@code null} object can be used as a key or as a value. <p>
  *
@@ -137,6 +138,7 @@ public class Hashtable<K,V>
     implements Map<K,V>, Cloneable, java.io.Serializable {
 
     /**
+     * <p>存储数据的容器。</p>
      * The hash table data.
      */
     private transient Entry<?,?>[] table;

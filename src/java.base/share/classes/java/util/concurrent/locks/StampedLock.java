@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import jdk.internal.vm.annotation.ReservedStackAccess;
 
 /**
+ * <p>不支持重入。</p>
  * A capability-based lock with three modes for controlling read/write
  * access.  The state of a StampedLock consists of a version and mode.
  * Lock acquisition methods return a stamp that represents and
@@ -636,6 +637,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     /**
+     * <p>乐观读。</p>
      * Returns a stamp that can later be validated, or zero
      * if exclusively locked.
      *

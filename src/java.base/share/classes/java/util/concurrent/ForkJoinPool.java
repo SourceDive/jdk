@@ -52,6 +52,7 @@ import java.util.function.Predicate;
 import java.util.concurrent.locks.LockSupport;
 
 /**
+ * <p>任务被fork成更小的任务，执行完毕后将结果合并(join)。</p>
  * An {@link ExecutorService} for running {@link ForkJoinTask}s.
  * A {@code ForkJoinPool} provides the entry point for submissions
  * from non-{@code ForkJoinTask} clients, as well as management and

@@ -201,6 +201,7 @@ public interface ExecutorService extends Executor {
     boolean isTerminated();
 
     /**
+     * <p>阻塞直到所有任务全都执行完毕。</p>
      * Blocks until all tasks have completed execution after a shutdown
      * request, or the timeout occurs, or the current thread is
      * interrupted, whichever happens first.
