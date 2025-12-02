@@ -238,6 +238,7 @@ final class PendingFuture<V,A> implements Future<V> {
         }
 
         // close channel if forceful cancel
+        // 强制关闭。
         if (mayInterruptIfRunning) {
             try {
                 channel().close();

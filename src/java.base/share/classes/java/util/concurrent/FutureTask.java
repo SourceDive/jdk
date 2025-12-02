@@ -103,7 +103,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     private Callable<V> callable;
     /** The result to return or exception to throw from get() */
     private Object outcome; // non-volatile, protected by state reads/writes
-    /** The thread running the callable; CASed during run() */
+    /** The thread running the callable; CASed during run() 执行任务的线程 */
     private volatile Thread runner;
     /** Treiber stack of waiting threads */
     private volatile WaitNode waiters;
@@ -163,15 +163,18 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
+        // 1、检查状态必须是 NEW
+        // 2、CAS状态转换操作(NEW -> INTERRUPTING / NEW -> CANCELLED)必须成功
         if (!(state == NEW && STATE.compareAndSet
               (this, NEW, mayInterruptIfRunning ? INTERRUPTING : CANCELLED)))
             return false;
+
         try {    // in case call to interrupt throws exception
             if (mayInterruptIfRunning) {
                 try {
                     Thread t = runner;
                     if (t != null)
-                        t.interrupt();
+                        t.interrupt(); // 发送中断信号。
                 } finally { // final state
                     STATE.setRelease(this, INTERRUPTED);
                 }

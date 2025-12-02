@@ -90,6 +90,8 @@ public interface Future<V> {
 
     /**
      * <p>取消任务。</p>
+     * <ul>true: 立即停止</ul>
+     * <ul>false: 温和，不立即停止。</ul>
      * Attempts to cancel execution of this task.  This attempt will
      * fail if the task has already completed, has already been cancelled,
      * or could not be cancelled for some other reason. If successful,
@@ -105,7 +107,7 @@ public interface Future<V> {
      *
      * @param mayInterruptIfRunning {@code true} if the thread executing this
      * task should be interrupted; otherwise, in-progress tasks are allowed
-     * to complete
+     * to complete 是否允许中断正在执行的线程。
      * @return {@code false} if the task could not be cancelled,
      * typically because it has already completed normally;
      * {@code true} otherwise

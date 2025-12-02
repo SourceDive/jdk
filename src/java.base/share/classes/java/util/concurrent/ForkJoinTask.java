@@ -886,7 +886,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      *
      * @return {@code true} if this task is now cancelled
      */
-    public boolean cancel(boolean mayInterruptIfRunning) {
+    public boolean cancel(boolean mayInterruptIfRunning) { // 参数未使用到。
         int s = abnormalCompletion(DONE | ABNORMAL);
         return (s & (ABNORMAL | THROWN)) == ABNORMAL;
     }

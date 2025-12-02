@@ -870,6 +870,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>这种暴力方法已经被废弃了。</p>
      * Forces the thread to stop executing.
      * <p>
      * If there is a security manager installed, its {@code checkAccess}
@@ -1014,7 +1015,7 @@ class Thread implements Runnable {
     }
 
     /**
-     * <p>测试当前线程是否已被中断。</p>
+     * <p>当前线程是否已被中断。</p>
      * Tests whether the current thread has been interrupted.  The
      * <i>interrupted status</i> of the thread is cleared by this method.  In
      * other words, if this method were to be called twice in succession, the

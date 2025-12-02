@@ -90,7 +90,7 @@ final class CompletedFuture<V> implements Future<V> {
     }
 
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
+    public boolean cancel(boolean mayInterruptIfRunning) { // 参数未使用到。
         return false;
     }
 }
