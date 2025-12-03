@@ -333,6 +333,7 @@ public class Object {
     }
 
     /**
+     * <p>使当前线程等待，直到被唤醒。</p>
      * <p>此操作可以被中断。</p>
      * Causes the current thread to wait until it is awakened, typically
      * by being <em>notified</em> or <em>interrupted</em>, or until a

@@ -190,6 +190,7 @@ public interface Lock {
     void lock();
 
     /**
+     * <p>此操作可以被中断。</p>
      * Acquires the lock unless the current thread is
      * {@linkplain Thread#interrupt interrupted}.
      *

@@ -120,6 +120,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     abstract static class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = -5179523762034025860L;
 
+        // 很重要的两点：状态为0时，CAS操作更新状态，其他线程立即可见状态变更后直接false返回。
         /**
          * Performs non-fair tryLock.  tryAcquire is implemented in
          * subclasses, but both need nonfair try for trylock method.

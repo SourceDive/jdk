@@ -1295,6 +1295,7 @@ class Thread implements Runnable {
 
     /**
      * <p>可以被中断。</p>
+     * <p>参数为0代表无限等待。</p>
      * Waits at most {@code millis} milliseconds for this thread to
      * die. A timeout of {@code 0} means to wait forever.
      *
@@ -1318,6 +1319,7 @@ class Thread implements Runnable {
      */
     public final synchronized void join(final long millis)
     throws InterruptedException {
+        // 有超时
         if (millis > 0) {
             if (isAlive()) {
                 final long startTime = System.nanoTime();
@@ -1328,6 +1330,7 @@ class Thread implements Runnable {
                         TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)) > 0);
             }
         } else if (millis == 0) {
+            // 无超时
             while (isAlive()) {
                 wait(0);
             }
