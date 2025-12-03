@@ -746,6 +746,7 @@ public abstract class AbstractQueuedLongSynchronizer
     }
 
     /**
+     * <p>忽略中断。</p>
      * Acquires in exclusive mode, ignoring interrupts.  Implemented
      * by invoking at least once {@link #tryAcquire},
      * returning on success.  Otherwise the thread is queued, possibly
@@ -764,6 +765,7 @@ public abstract class AbstractQueuedLongSynchronizer
     }
 
     /**
+     * <p>此操作可以被中断。</p>
      * Acquires in exclusive mode, aborting if interrupted.
      * Implemented by first checking interrupt status, then invoking
      * at least once {@link #tryAcquire}, returning on
@@ -868,6 +870,7 @@ public abstract class AbstractQueuedLongSynchronizer
     }
 
     /**
+     * <p>此操作可以被中断。</p>
      * Attempts to acquire in shared mode, aborting if interrupted, and
      * failing if the given timeout elapses.  Implemented by first
      * checking interrupt status, then invoking at least once {@link

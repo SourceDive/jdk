@@ -289,6 +289,7 @@ class Thread implements Runnable {
     /**
      * <p>线程睡眠。</p>
      * <p>不会失去monitor的持有权。</p>
+     * <p>此操作可以被中断。</p>
      * Causes the currently executing thread to sleep (temporarily cease
      * execution) for the specified number of milliseconds, subject to
      * the precision and accuracy of system timers and schedulers. The thread
@@ -304,12 +305,14 @@ class Thread implements Runnable {
      *          if any thread has interrupted the current thread. The
      *          <i>interrupted status</i> of the current thread is
      *          cleared when this exception is thrown.
+     *          如何其他线程中断过当前线程，当抛出异常时，中断信号会被消费掉。
      */
     public static native void sleep(long millis) throws InterruptedException;
 
     /**
      * <p>线程睡眠。</p>
      * <p>不会失去monitor的持有权。</p>
+     * <p>可以被中断。</p>
      * Causes the currently executing thread to sleep (temporarily cease
      * execution) for the specified number of milliseconds plus the specified
      * number of nanoseconds, subject to the precision and accuracy of system
@@ -410,7 +413,7 @@ class Thread implements Runnable {
 
         this.name = name;
 
-        // 构造时的 parent 就是当前线程。
+        // 当前线程就是该线程的父线程。
         Thread parent = currentThread();
         SecurityManager security = System.getSecurityManager();
         if (g == null) {
@@ -1015,7 +1018,8 @@ class Thread implements Runnable {
     }
 
     /**
-     * <p>当前线程是否已被中断。</p>
+     * <p>检测当前线程是否已被中断(会消费中断信号)。</p>
+     * <p>我觉得消费掉信号，比清理掉标识更加贴切，中断是个信号，看了之后就不存在了。</p>
      * Tests whether the current thread has been interrupted.  The
      * <i>interrupted status</i> of the thread is cleared by this method.  In
      * other words, if this method were to be called twice in succession, the
@@ -1037,7 +1041,7 @@ class Thread implements Runnable {
     }
 
     /**
-     * <p>测试当前线程是否已被中断。</p>
+     * <p>检测当前线程是否已被中断(不会去消费掉中断信号)。</p>
      * Tests whether this thread has been interrupted.  The <i>interrupted
      * status</i> of the thread is unaffected by this method.
      *
@@ -1223,6 +1227,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>返回当前线程组活跃的线程数量。</p>
      * Returns an estimate of the number of active threads in the current
      * thread's {@linkplain java.lang.ThreadGroup thread group} and its
      * subgroups. Recursively iterates over all subgroups in the current
@@ -1289,6 +1294,7 @@ class Thread implements Runnable {
     public native int countStackFrames();
 
     /**
+     * <p>可以被中断。</p>
      * Waits at most {@code millis} milliseconds for this thread to
      * die. A timeout of {@code 0} means to wait forever.
      *
@@ -1308,6 +1314,7 @@ class Thread implements Runnable {
      *          if any thread has interrupted the current thread. The
      *          <i>interrupted status</i> of the current thread is
      *          cleared when this exception is thrown.
+     *          当InterruptedException异常被抛出后，中断信号会被消费掉。
      */
     public final synchronized void join(final long millis)
     throws InterruptedException {
@@ -1330,6 +1337,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>可以被中断。</p>
      * Waits at most {@code millis} milliseconds plus
      * {@code nanos} nanoseconds for this thread to die.
      *
@@ -1376,6 +1384,7 @@ class Thread implements Runnable {
     /**
      * Waits for this thread to die.
      * <p>相当于子流程要合并到主流程中了，但是子流程要先执行完毕。</p>
+     * <p>可以被中断。</p>
      *
      * <p> An invocation of this method behaves in exactly the same
      * way as the invocation
@@ -1987,6 +1996,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>获取未捕获异常处理器。</p>
      * Returns the handler invoked when this thread abruptly terminates
      * due to an uncaught exception. If this thread has not had an
      * uncaught exception handler explicitly set then this thread's
@@ -2001,6 +2011,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>设置未捕获异常处理器。</p>
      * <p>子线程异常可以通过这个来捕获。</p>
      * Set the handler invoked when this thread abruptly terminates
      * due to an uncaught exception.

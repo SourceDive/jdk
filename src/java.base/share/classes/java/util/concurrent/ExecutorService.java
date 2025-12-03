@@ -202,6 +202,7 @@ public interface ExecutorService extends Executor {
 
     /**
      * <p>阻塞直到所有任务全都执行完毕。</p>
+     * <p>此操作可以被中断。</p>
      * Blocks until all tasks have completed execution after a shutdown
      * request, or the timeout occurs, or the current thread is
      * interrupted, whichever happens first.
@@ -211,6 +212,7 @@ public interface ExecutorService extends Executor {
      * @return {@code true} if this executor terminated and
      *         {@code false} if the timeout elapsed before termination
      * @throws InterruptedException if interrupted while waiting
+     * 当线程等待时被中断，会抛出这个异常。
      */
     boolean awaitTermination(long timeout, TimeUnit unit)
         throws InterruptedException;
@@ -269,6 +271,7 @@ public interface ExecutorService extends Executor {
     Future<?> submit(Runnable task);
 
     /**
+     * <p>此操作可以被中断。</p>
      * Executes the given tasks, returning a list of Futures holding
      * their status and results when all complete.
      * {@link Future#isDone} is {@code true} for each
@@ -284,7 +287,7 @@ public interface ExecutorService extends Executor {
      *         sequential order as produced by the iterator for the
      *         given task list, each of which has completed
      * @throws InterruptedException if interrupted while waiting, in
-     *         which case unfinished tasks are cancelled
+     *         which case unfinished tasks are cancelled 如果在等待期间线程被中断，则会抛出InterruptedException，并且在这种情况下，未完成的任务会被取消。
      * @throws NullPointerException if tasks or any of its elements are {@code null}
      * @throws RejectedExecutionException if any task cannot be
      *         scheduled for execution
@@ -293,6 +296,7 @@ public interface ExecutorService extends Executor {
         throws InterruptedException;
 
     /**
+     * <p>此操作可以被中断。</p>
      * Executes the given tasks, returning a list of Futures holding
      * their status and results
      * when all complete or the timeout expires, whichever happens first.
@@ -325,6 +329,7 @@ public interface ExecutorService extends Executor {
         throws InterruptedException;
 
     /**
+     * <p>此操作可以被中断。</p>
      * Executes the given tasks, returning the result
      * of one that has completed successfully (i.e., without throwing
      * an exception), if any do. Upon normal or exceptional return,
@@ -347,6 +352,7 @@ public interface ExecutorService extends Executor {
         throws InterruptedException, ExecutionException;
 
     /**
+     * <p>此操作可以被中断。</p>
      * Executes the given tasks, returning the result
      * of one that has completed successfully (i.e., without throwing
      * an exception), if any do before the given timeout elapses.
