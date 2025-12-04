@@ -696,6 +696,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
+     * <p>检查是否线程正在等待给定的 condition.</p>
      * Queries whether any threads are waiting on the given condition
      * associated with this lock. Note that because timeouts and
      * interrupts may occur at any time, a {@code true} return does

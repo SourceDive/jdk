@@ -158,10 +158,10 @@ public class LinkedBlockingDeque<E>
     /** Main lock guarding all access */
     final ReentrantLock lock = new ReentrantLock();
 
-    /** Condition for waiting takes */
+    /** Condition for waiting takes 非空条件 */
     private final Condition notEmpty = lock.newCondition();
 
-    /** Condition for waiting puts */
+    /** Condition for waiting puts 非满条件 */
     private final Condition notFull = lock.newCondition();
 
     /**
@@ -202,6 +202,7 @@ public class LinkedBlockingDeque<E>
     // Basic linking and unlinking operations, called only while holding lock
 
     /**
+     * <p>如果已满，返回false.</p>
      * Links node as first element, or returns false if full.
      */
     private boolean linkFirst(Node<E> node) {
@@ -216,11 +217,12 @@ public class LinkedBlockingDeque<E>
         else
             f.prev = node;
         ++count;
-        notEmpty.signal();
+        notEmpty.signal(); // 添加元素后，满足非空条件。
         return true;
     }
 
     /**
+     * <p>已满，返回false.</p>
      * Links node as last element, or returns false if full.
      */
     private boolean linkLast(Node<E> node) {
@@ -235,7 +237,7 @@ public class LinkedBlockingDeque<E>
         else
             l.next = node;
         ++count;
-        notEmpty.signal();
+        notEmpty.signal(); // 添加元素后，满足非空条件。
         return true;
     }
 
@@ -257,7 +259,7 @@ public class LinkedBlockingDeque<E>
         else
             n.prev = null;
         --count;
-        notFull.signal();
+        notFull.signal(); // 队列减少了元素，满足非满条件。
         return item;
     }
 
@@ -279,7 +281,7 @@ public class LinkedBlockingDeque<E>
         else
             p.next = null;
         --count;
-        notFull.signal();
+        notFull.signal(); // 队列减少了元素，满足非满条件。
         return item;
     }
 
@@ -302,7 +304,7 @@ public class LinkedBlockingDeque<E>
             // Don't mess with x's links.  They may still be in use by
             // an iterator.
             --count;
-            notFull.signal();
+            notFull.signal(); // 队列减少了元素，满足非满条件。
         }
     }
 
@@ -366,6 +368,7 @@ public class LinkedBlockingDeque<E>
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 已满，等待非满条件
             while (!linkFirst(node))
                 notFull.await();
         } finally {
@@ -383,6 +386,7 @@ public class LinkedBlockingDeque<E>
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 已满，等待非满条件。
             while (!linkLast(node))
                 notFull.await();
         } finally {
@@ -402,6 +406,7 @@ public class LinkedBlockingDeque<E>
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
+            // 已满，等待非满条件。
             while (!linkFirst(node)) {
                 if (nanos <= 0L)
                     return false;
@@ -425,6 +430,7 @@ public class LinkedBlockingDeque<E>
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
+            // 已满，等待非满条件。
             while (!linkLast(node)) {
                 if (nanos <= 0L)
                     return false;
@@ -479,6 +485,7 @@ public class LinkedBlockingDeque<E>
         lock.lock();
         try {
             E x;
+            // 队列为空，需要等待满足非空条件
             while ( (x = unlinkFirst()) == null)
                 notEmpty.await();
             return x;
@@ -492,6 +499,7 @@ public class LinkedBlockingDeque<E>
         lock.lock();
         try {
             E x;
+            // 队列为空，需要满足非空条件。
             while ( (x = unlinkLast()) == null)
                 notEmpty.await();
             return x;
@@ -507,6 +515,7 @@ public class LinkedBlockingDeque<E>
         lock.lockInterruptibly();
         try {
             E x;
+            // 队列为空，需要满足非空条件。
             while ( (x = unlinkFirst()) == null) {
                 if (nanos <= 0L)
                     return null;
@@ -525,6 +534,7 @@ public class LinkedBlockingDeque<E>
         lock.lockInterruptibly();
         try {
             E x;
+            // 队列为空，需要满足非空条件。
             while ( (x = unlinkLast()) == null) {
                 if (nanos <= 0L)
                     return null;
@@ -873,7 +883,7 @@ public class LinkedBlockingDeque<E>
                     last.next = beg;
                 last = end;
                 count += n;
-                notEmpty.signalAll();
+                notEmpty.signalAll(); // 队列增加了元素，满足非空条件。
                 return true;
             }
         } finally {
@@ -988,7 +998,7 @@ public class LinkedBlockingDeque<E>
             }
             first = last = null;
             count = 0;
-            notFull.signalAll();
+            notFull.signalAll(); // 清空了所有元素，满足非满条件。
         } finally {
             lock.unlock();
         }

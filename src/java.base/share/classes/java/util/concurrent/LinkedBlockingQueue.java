@@ -162,13 +162,13 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     /** Lock held by take, poll, etc */
     private final ReentrantLock takeLock = new ReentrantLock();
 
-    /** Wait queue for waiting takes */
+    /** Wait queue for waiting takes 非空条件, 消费者使用*/
     private final Condition notEmpty = takeLock.newCondition();
 
     /** Lock held by put, offer, etc */
     private final ReentrantLock putLock = new ReentrantLock();
 
-    /** Wait queue for waiting puts */
+    /** Wait queue for waiting puts 非满条件，生产者使用*/
     private final Condition notFull = putLock.newCondition();
 
     /**
@@ -363,7 +363,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             putLock.unlock();
         }
         if (c == 0)
-            signalNotEmpty();
+            signalNotEmpty(); // put后满足非空条件。
     }
 
     /**
@@ -385,6 +385,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         final AtomicInteger count = this.count;
         putLock.lockInterruptibly();
         try {
+            // 为空，等待非空条件。
             while (count.get() == capacity) {
                 if (nanos <= 0L)
                     return false;
@@ -398,7 +399,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             putLock.unlock();
         }
         if (c == 0)
-            signalNotEmpty();
+            signalNotEmpty(); // offer 后满足非空条件。
         return true;
     }
 
@@ -433,7 +434,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             putLock.unlock();
         }
         if (c == 0)
-            signalNotEmpty();
+            signalNotEmpty(); // offer 后满足非空条件。
         return true;
     }
 
@@ -450,8 +451,9 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lockInterruptibly();
         try {
+            // 为空，等待非空条件。
             while (count.get() == 0) {
-                notEmpty.await(); // 队列为空，线程一直等待。
+                notEmpty.await();
             }
             x = dequeue();
             c = count.getAndDecrement();
@@ -473,6 +475,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lockInterruptibly();
         try {
+            // 为空，等待非空条件。
             while (count.get() == 0) {
                 if (nanos <= 0L)
                     return null;

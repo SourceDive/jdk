@@ -121,10 +121,10 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     final ReentrantLock lock;
 
     /** Condition for waiting takes */
-    private final Condition notEmpty;
+    private final Condition notEmpty; // 条件：非空。当前队列非空，才能去take
 
     /** Condition for waiting puts */
-    private final Condition notFull;
+    private final Condition notFull; // 条件：非满。当前队列非满，才能去put
 
     /**
      * Shared state for currently active iterators, or null if there
@@ -171,6 +171,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>入队。</p>
      * Inserts element at current put position, advances, and signals.
      * Call only when holding lock.
      */
@@ -182,10 +183,11 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         items[putIndex] = e;
         if (++putIndex == items.length) putIndex = 0;
         count++;
-        notEmpty.signal();
+        notEmpty.signal(); // 非空条件满足
     }
 
     /**
+     * <p>出队。</p>
      * Extracts element at current take position, advances, and signals.
      * Call only when holding lock.
      */
@@ -201,7 +203,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         count--;
         if (itrs != null)
             itrs.elementDequeued();
-        notFull.signal();
+        notFull.signal(); // 出队成功，满足非满条件。
         return e;
     }
 
@@ -241,7 +243,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
             if (itrs != null)
                 itrs.removedAt(removeIndex);
         }
-        notFull.signal();
+        notFull.signal(); // 删除元素成功，满足非满条件。
     }
 
     /**
@@ -365,7 +367,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         lock.lockInterruptibly();
         try {
             while (count == items.length)
-                notFull.await();
+                notFull.await(); // 当前队列已满，等待非满条件。
             enqueue(e);
         } finally {
             lock.unlock();
@@ -388,11 +390,14 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
+            // 当前队列已满，等待非满条件。
             while (count == items.length) {
                 if (nanos <= 0L)
                     return false;
                 nanos = notFull.awaitNanos(nanos);
             }
+
+            // 满足条件，继续下一步。
             enqueue(e);
             return true;
         } finally {
@@ -414,8 +419,11 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
+            // 当前元素数量为0, 不满足非空条件，等待非空条件。
             while (count == 0)
                 notEmpty.await();
+
+            // 满足条件，继续下一步。
             return dequeue();
         } finally {
             lock.unlock();
@@ -430,7 +438,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
             while (count == 0) {
                 if (nanos <= 0L)
                     return null;
-                nanos = notEmpty.awaitNanos(nanos);
+                nanos = notEmpty.awaitNanos(nanos); // 当前为空，等待非空条件。
             }
             return dequeue();
         } finally {
@@ -666,7 +674,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
                 if (itrs != null)
                     itrs.queueIsEmpty();
                 for (; k > 0 && lock.hasWaiters(notFull); k--)
-                    notFull.signal();
+                    notFull.signal(); // 清空所有元素了，满足非满条件。
             }
         } finally {
             lock.unlock();
@@ -738,7 +746,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
                             itrs.takeIndexWrapped();
                     }
                     for (; i > 0 && lock.hasWaiters(notFull); i--)
-                        notFull.signal();
+                        notFull.signal(); // 移除了元素，满足非满条件。
                 }
             }
         } finally {

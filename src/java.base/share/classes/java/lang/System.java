@@ -567,6 +567,7 @@ public final class System {
                                         int length);
 
     /**
+     * <p>返回对象id.</p>
      * Returns the same hash code for the given object as
      * would be returned by the default method hashCode(),
      * whether or not the given object's class overrides
