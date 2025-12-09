@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
+ * <p>所有字段都是final修饰的。</p>
  * Immutable, arbitrary-precision signed decimal numbers.  A
  * {@code BigDecimal} consists of an arbitrary precision integer
  * <i>unscaled value</i> and a 32-bit integer <i>scale</i>.  If zero
@@ -236,6 +237,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     private final BigInteger intVal;
 
     /**
+     * <p>表示小数点的位置。</p>
      * The scale of this BigDecimal, as returned by {@link #scale}.
      *
      * @serial

@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 
 
 /**
+ * <p>事件选择器。</p>
  * A multiplexor of {@link SelectableChannel} objects.
  *
  * <p> A selector may be created by invoking the {@link #open open} method of

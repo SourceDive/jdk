@@ -195,10 +195,10 @@ public abstract class Buffer {
         Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.ORDERED;
 
     // Invariants: mark <= position <= limit <= capacity
-    private int mark = -1;
-    private int position = 0;
-    private int limit;
-    private int capacity;
+    private int mark = -1; // -1 表示无标记
+    private int position = 0; // 当前操作的位置
+    private int limit;    // 当前可以操作的范围
+    private int capacity; // 容量
 
     // Used by heap byte buffers or direct buffers with Unsafe access
     // For heap byte buffers this field will be the address relative to the
@@ -373,16 +373,19 @@ public abstract class Buffer {
     }
 
     /**
+     * <p>设置标签。</p>
+     * <p>类似添加标记、添加书签这样。</p>
      * Sets this buffer's mark at its position.
      *
      * @return  This buffer
      */
     public Buffer mark() {
-        mark = position;
+        mark = position; // 设置当前位置为标签。
         return this;
     }
 
     /**
+     * <p>重置当前位置为标签的位置。</p>
      * Resets this buffer's position to the previously-marked position.
      *
      * <p> Invoking this method neither changes nor discards the mark's
@@ -402,6 +405,9 @@ public abstract class Buffer {
     }
 
     /**
+     * <p>清空。</p>
+     * <p>重头开始写。</p>
+     * <p>切换：读 -> 写。</p>
      * Clears this buffer.  The position is set to zero, the limit is set to
      * the capacity, and the mark is discarded.
      *
@@ -419,13 +425,14 @@ public abstract class Buffer {
      * @return  This buffer
      */
     public Buffer clear() {
-        position = 0;
-        limit = capacity;
+        position = 0; // 位置重置到开头
+        limit = capacity; // 允许写入整个缓冲区
         mark = -1;
         return this;
     }
 
     /**
+     * <p>切换：写 -> 读。</p>
      * Flips this buffer.  The limit is set to the current position and then
      * the position is set to zero.  If the mark is defined then it is
      * discarded.
@@ -449,7 +456,7 @@ public abstract class Buffer {
     public Buffer flip() {
         limit = position;
         position = 0;
-        mark = -1;
+        mark = -1; // 清空标签
         return this;
     }
 
@@ -485,6 +492,7 @@ public abstract class Buffer {
     }
 
     /**
+     * <p>是否还存在剩余的元素。</p>
      * Tells whether there are any elements between the current position and
      * the limit.
      *

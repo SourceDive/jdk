@@ -343,6 +343,7 @@ public interface BlockingQueue<E> extends Queue<E> {
     boolean contains(Object o);
 
     /**
+     * <p>drain是排水、排干的意思。</p>
      * <p>1、移除队列中所有元素  2、把元素都插入到给定的集合中。</p>
      * Removes all available elements from this queue and adds them
      * to the given collection.  This operation may be more
@@ -369,6 +370,7 @@ public interface BlockingQueue<E> extends Queue<E> {
     int drainTo(Collection<? super E> c);
 
     /**
+     * <p>排水。指定要排的数量。</p>
      * Removes at most the given number of available elements from
      * this queue and adds them to the given collection.  A failure
      * encountered while attempting to add elements to

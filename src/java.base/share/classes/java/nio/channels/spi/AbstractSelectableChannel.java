@@ -288,6 +288,7 @@ public abstract class AbstractSelectableChannel
     }
 
     /**
+     * <p>设置 channel 的阻塞模式。</p>
      * Adjusts this channel's blocking mode.
      *
      * <p> If the given blocking mode is different from the current blocking
