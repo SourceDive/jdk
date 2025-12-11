@@ -1352,6 +1352,7 @@ public final class Unsafe {
     }
 
     /**
+     * <p>如果 obj 的 offset 位置的值等于 expect，则设置为 x, 返回 true</p>
      * Atomically updates Java variable to {@code x} if it is currently
      * holding {@code expected}.
      *

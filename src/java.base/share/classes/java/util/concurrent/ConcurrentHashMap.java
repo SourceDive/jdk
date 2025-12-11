@@ -617,6 +617,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /* ---------------- Nodes -------------- */
 
     /**
+     * <p>链表结点</p>
      * Key-value entry.  This class is never exported out as a
      * user-mutable Map.Entry (i.e., one supporting setValue; see
      * MapEntry below), but can be used for read-only traversals used
@@ -741,6 +742,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 ((Comparable)k).compareTo(x));
     }
 
+    // 表中元素原子访问
     /* ---------------- Table element access -------------- */
 
     /*
@@ -782,7 +784,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * The next table to use; non-null only while resizing.
      */
-    private transient volatile Node<K,V>[] nextTable;
+    private transient volatile Node<K,V>[] nextTable; // 扩容时的新数组
 
     /**
      * Base counter value, used mainly when there is no contention,
@@ -792,6 +794,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     private transient volatile long baseCount;
 
     /**
+     * <ul>-1: 初始化中</ul>
+     * <ul>-1: 初始化中</ul>
      * Table initialization and resizing control.  When negative, the
      * table is being initialized or resized: -1 for initialization,
      * else -(1 + the number of active resizing threads).  Otherwise,
@@ -799,7 +803,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * creation, or 0 for default. After initialization, holds the
      * next element count value upon which to resize the table.
      */
-    private transient volatile int sizeCtl;
+    private transient volatile int sizeCtl; // 调整大小的控制变量
 
     /**
      * The next table index (plus one) to split while resizing.
@@ -1012,18 +1016,23 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /** Implementation for put and putIfAbsent */
     final V putVal(K key, V value, boolean onlyIfAbsent) {
+        // 检查 key 和 value 不能为 null
         if (key == null || value == null) throw new NullPointerException();
+
         int hash = spread(key.hashCode());
         int binCount = 0;
         for (Node<K,V>[] tab = table;;) {
             Node<K,V> f; // firstNode
             int n/*tableLength*/, i/*bucketIndex*/, fh/*firstNodeHash*/; K fk; V fv;
 
+            // 初始化 table
+            // 如果table为空，则首次循环进行初始化，下次循环才进行插入。
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
 
             // 桶是否为空
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+                // 原子写入
                 if (casTabAt(tab, i, null, new Node<K,V>(hash, key, value)))
                     break;                   // no lock when adding to empty bin
             }
@@ -2229,6 +2238,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /* ---------------- Special Nodes -------------- */
 
     /**
+     * <p>转发结点</p>
+     * <p>扩容时的占位结点</p>
      * A node inserted at head of bins during transfer operations.
      */
     static final class ForwardingNode<K,V> extends Node<K,V> {
@@ -2289,21 +2300,30 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * <p>初始化 table.</p>
+     * <p>这里也是双重检查</p>
      * Initializes table, using the size recorded in sizeCtl.
      */
     private final Node<K,V>[] initTable() {
-        Node<K,V>[] tab; int sc;
+        Node<K,V>[] tab; int sc/*size control*/;
         while ((tab = table) == null || tab.length == 0) {
+            // (第一次检查)
+            // 当前线程看到-1时，表示有其他线程正在初始化，当前线程 yield.
             if ((sc = sizeCtl) < 0)
                 Thread.yield(); // lost initialization race; just spin
-            else if (U.compareAndSetInt(this, SIZECTL, sc, -1)) {
+            // 如果 sizectl 如果等于 sc, 就 sizectl = -1
+            // -1 表示正在初始化
+            else if (U.compareAndSetInt(this, SIZECTL, sc/*expected*/, -1)) {
                 try {
+                    // (获取锁后第二次检查)
                     if ((tab = table) == null || tab.length == 0) {
                         int n = (sc > 0) ? sc : DEFAULT_CAPACITY;
+
+                        // 创建新数组
                         @SuppressWarnings("unchecked")
                         Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n];
                         table = tab = nt;
-                        sc = n - (n >>> 2);
+                        sc = n - (n >>> 2); // 相当于 sc = n * 0.75
                     }
                 } finally {
                     sizeCtl = sc;
@@ -2315,6 +2335,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * <p>1、计数</p>
+     * <p>2、扩容</p>
      * Adds to count, and if table is too small and not already
      * resizing, initiates transfer. If already resizing, helps
      * perform transfer if work is available.  Rechecks occupancy
@@ -2421,6 +2443,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * <p>转移。</p>
      * Moves and/or copies the nodes in each bin to new table. See
      * above for explanation.
      */
@@ -2432,7 +2455,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             try {
                 @SuppressWarnings("unchecked")
                 Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n << 1];
-                nextTab = nt;
+                nextTab = nt; // 新建数组后赋值变量
             } catch (Throwable ex) {      // try to cope with OOME
                 sizeCtl = Integer.MAX_VALUE;
                 return;
@@ -2710,6 +2733,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /* ---------------- TreeNodes -------------- */
 
     /**
+     * <p>红黑树结点</p>
      * Nodes for use in TreeBins.
      */
     static final class TreeNode<K,V> extends Node<K,V> {
@@ -2766,6 +2790,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /* ---------------- TreeBins -------------- */
 
     /**
+     * <p>treebin不持有key或者value。它指向红黑树的根节点。</p>
+     * <p>也持有读写锁。</p>
      * TreeNodes used at the heads of bins. TreeBins do not hold user
      * keys or values, but instead point to list of TreeNodes and
      * their root. They also maintain a parasitic read-write lock
@@ -2776,7 +2802,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         TreeNode<K,V> root;
         volatile TreeNode<K,V> first;
         volatile Thread waiter;
-        volatile int lockState;
+        volatile int lockState; // 锁状态
         // values for lockState
         static final int WRITER = 1; // set while holding write lock
         static final int WAITER = 2; // set when waiting for write lock

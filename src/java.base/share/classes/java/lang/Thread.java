@@ -269,6 +269,7 @@ class Thread implements Runnable {
     public static native Thread currentThread();
 
     /**
+     * <p>让出 CPU.</p>
      * A hint to the scheduler that the current thread is willing to yield
      * its current use of a processor. The scheduler is free to ignore this
      * hint.
