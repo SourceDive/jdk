@@ -797,6 +797,16 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * <p>扩容阈值</p>
      * <ul>-1: 初始化中</ul>
      * <ul>小于-1时，例如：sizeCtl = -3 表示有2个线程在扩容. -(1 + the number of active resizing threads)</ul>
+     * <p>
+     *
+     * 1. 高16位是"扩容身份证"（唯一标识这次扩容）
+     * </p>
+     * <p>
+     * 2. 低16位是"工人计数牌"（记录有多少工人在干活）
+     * </p>
+     * <p>
+     * 3. 负数表示"工地开工中"（扩容进行状态）
+     * </p>
      * Table initialization and resizing control.  When negative, the
      * table is being initialized or resized: -1 for initialization,
      * else -(1 + the number of active resizing threads).  Otherwise,
@@ -2294,6 +2304,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /* ---------------- Table Initialization and Resizing -------------- */
 
     /**
+     * <p>扩容戳</p>
+     * <p>扩容版本号生成器。</p>
+     * <p>这里返回的数是16位的。但是int32位，所以前16位自动填充为0.</p>
      * Returns the stamp bits for resizing a table of size n.
      * Must be negative when shifted left by RESIZE_STAMP_SHIFT.
      */
@@ -2354,7 +2367,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         // 分段计数条件：
         // 1、counterCells 不为空
-        // 2、CAS 计数失败
+        // 2、CAS 更新计数失败
         if ((cs = counterCells) != null ||
             !U.compareAndSetLong(this, BASECOUNT, b = baseCount, s = b + x)) { // 这里CAS更新如果成功就直接可以了。
             CounterCell c; long v; int m;
@@ -2371,6 +2384,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 return;
             s = sumCount();
         }
+
         if (check >= 0) {
             Node<K,V>[] tab, nt; int n, sc;
             // 扩容条件：
@@ -2379,7 +2393,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             // 3、当前还可以扩容
             while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
                    (n = tab.length) < MAXIMUM_CAPACITY) {
-                int rs = resizeStamp(n) << RESIZE_STAMP_SHIFT;
+
+                // 将扩容戳移动到高16位，给线程计数腾出位置。
+                // (前16位) 扩容戳 | (后16位) 线程数
+                int rs = resizeStamp(n) << RESIZE_STAMP_SHIFT/*16*/;
 
                 // 已经在扩容了，当前线程要判断是否要去协助扩容
                 if (sc < 0) {
@@ -2396,6 +2413,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     if (U.compareAndSetInt(this, SIZECTL, sc, sc + 1)) // CAS 更新扩容的线程数量
                         transfer(tab, nt);
                 }
+
+                // ==> 扩容开始
+                // 还未进行扩容，当前线程触发扩容
                 else if (U.compareAndSetInt(this, SIZECTL, sc, rs + 2))
                     transfer(tab, null);
                 s = sumCount();
@@ -2518,6 +2538,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 if (U.compareAndSetInt(this, SIZECTL, sc = sizeCtl, sc - 1)) {
                     if ((sc - 2) != resizeStamp(n) << RESIZE_STAMP_SHIFT)
                         return;
+
+                    // ==> 扩容结束，回到初始阶段
                     finishing = advance = true;
                     i = n; // recheck before commit
                 }

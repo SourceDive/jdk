@@ -1618,6 +1618,10 @@ public final class Integer extends Number
     }
 
     /**
+     * <p>获取 n 的二进制前导零个数。</p>
+     * <p>0 => 32</p>
+     * <p>1 => 31</p>
+     * <p>2 => 30</p>
      * Returns the number of zero bits preceding the highest-order
      * ("leftmost") one-bit in the two's complement binary representation
      * of the specified {@code int} value.  Returns 32 if the
