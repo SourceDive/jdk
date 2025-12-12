@@ -794,8 +794,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     private transient volatile long baseCount;
 
     /**
+     * <p>扩容阈值</p>
      * <ul>-1: 初始化中</ul>
-     * <ul>-1: 初始化中</ul>
+     * <ul>小于-1时，例如：sizeCtl = -3 表示有2个线程在扩容. -(1 + the number of active resizing threads)</ul>
      * Table initialization and resizing control.  When negative, the
      * table is being initialized or resized: -1 for initialization,
      * else -(1 + the number of active resizing threads).  Otherwise,
@@ -1394,6 +1395,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * <p>分段锁。</p>
+     * <p>注意它继承了ReentrantLock。</p>
      * Stripped-down version of helper class used in previous version,
      * declared for the sake of serialization compatibility.
      */
@@ -2347,15 +2349,21 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @param check if <0, don't check resize, if <= 1 only check if uncontended
      */
     private final void addCount(long x, int check) {
-        CounterCell[] cs; long b, s;
+        CounterCell[] cs; // 多个计数单元
+        long b, s;
+
+        // 分段计数条件：
+        // 1、counterCells 不为空
+        // 2、CAS 计数失败
         if ((cs = counterCells) != null ||
-            !U.compareAndSetLong(this, BASECOUNT, b = baseCount, s = b + x)) {
+            !U.compareAndSetLong(this, BASECOUNT, b = baseCount, s = b + x)) { // 这里CAS更新如果成功就直接可以了。
             CounterCell c; long v; int m;
             boolean uncontended = true;
             if (cs == null || (m = cs.length - 1) < 0 ||
                 (c = cs[ThreadLocalRandom.getProbe() & m]) == null ||
                 !(uncontended =
-                  U.compareAndSetLong(c, CELLVALUE, v = c.value, v + x))) {
+                  U.compareAndSetLong(c, CELLVALUE, v = c.value, v + x)))
+            {
                 fullAddCount(x, uncontended);
                 return;
             }
@@ -2365,14 +2373,27 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
         if (check >= 0) {
             Node<K,V>[] tab, nt; int n, sc;
+            // 扩容条件：
+            // 1、计数后的数量大于阈值
+            // 2、表已经初始化
+            // 3、当前还可以扩容
             while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
                    (n = tab.length) < MAXIMUM_CAPACITY) {
                 int rs = resizeStamp(n) << RESIZE_STAMP_SHIFT;
+
+                // 已经在扩容了，当前线程要判断是否要去协助扩容
                 if (sc < 0) {
-                    if (sc == rs + MAX_RESIZERS || sc == rs + 1 ||
-                        (nt = nextTable) == null || transferIndex <= 0)
+                    // 不参与扩容
+                    if (sc == rs + MAX_RESIZERS
+                            || sc == rs + 1
+                            || (nt = nextTable) == null // 检查扩容是否已完成。 (扩容完成后，这个会为null)
+                            || transferIndex <= 0)
+                    {
                         break;
-                    if (U.compareAndSetInt(this, SIZECTL, sc, sc + 1))
+                    }
+
+                    // 协助扩容
+                    if (U.compareAndSetInt(this, SIZECTL, sc, sc + 1)) // CAS 更新扩容的线程数量
                         transfer(tab, nt);
                 }
                 else if (U.compareAndSetInt(this, SIZECTL, sc, rs + 2))
@@ -2489,7 +2510,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             if (i < 0 || i >= n || i + n >= nextn) {
                 int sc;
                 if (finishing) {
-                    nextTable = null;
+                    nextTable = null; // 扩容完成后，设置新表为null.
                     table = nextTab;
                     sizeCtl = (n << 1) - (n >>> 1);
                     return;
@@ -6382,7 +6403,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     // Unsafe mechanics
     private static final Unsafe U = Unsafe.getUnsafe();
-    private static final long SIZECTL;
+    private static final long SIZECTL; // 高16位符号位，低16位为线程数量
     private static final long TRANSFERINDEX;
     private static final long BASECOUNT;
     private static final long CELLSBUSY;

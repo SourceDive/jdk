@@ -31,6 +31,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * <p>防止伪共享。</p>
  * <p>An annotation expressing that objects and/or their fields are
  * expected to encounter memory contention, generally in the form of
  * "false sharing". This annotation serves as a hint that such objects
