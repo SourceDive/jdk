@@ -72,6 +72,7 @@ import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
 /**
+ * <p>类加载器。</p>
  * A class loader is an object that is responsible for loading classes. The
  * class {@code ClassLoader} is an abstract class.  Given the <a
  * href="#binary-name">binary name</a> of a class, a class loader should attempt to
@@ -567,7 +568,7 @@ public abstract class ClassLoader {
     {
         synchronized (getClassLoadingLock(name)) {
             // First, check if the class has already been loaded
-            // 检查类是否已被加载。
+            // 根据类名查找加载的类。
             Class<?> c = findLoadedClass(name);
             if (c == null) {
                 long t0 = System.nanoTime();
@@ -1266,7 +1267,7 @@ public abstract class ClassLoader {
     private native Class<?> findBootstrapClass(String name);
 
     /**
-     * <p>检查类是否已被加载。</p>
+     * <p>根据类名查找加载的类。</p>
      * Returns the class with the given <a href="#binary-name">binary name</a> if this
      * loader has been recorded by the Java virtual machine as an initiating
      * loader of a class with that <a href="#binary-name">binary name</a>.  Otherwise

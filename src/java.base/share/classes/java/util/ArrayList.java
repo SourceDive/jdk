@@ -462,6 +462,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * <p>set不会导致结构变更。</p>
      * Replaces the element at the specified position in this list with
      * the specified element.
      *
@@ -496,7 +497,7 @@ public class ArrayList<E> extends AbstractList<E>
      * @return {@code true} (as specified by {@link Collection#add})
      */
     public boolean add(E e) {
-        modCount++;
+        modCount++; // 结构变更
         add(e, elementData, size);
         return true;
     }
@@ -512,7 +513,7 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public void add(int index, E element) {
         rangeCheckForAdd(index);
-        modCount++;
+        modCount++; // 结构变更，修改次数++
         final int s;
         Object[] elementData;
         if ((s = size) == (elementData = this.elementData).length)
@@ -668,7 +669,7 @@ public class ArrayList<E> extends AbstractList<E>
      * return the value removed.
      */
     private void fastRemove(Object[] es, int i) {
-        modCount++;
+        modCount++; // 结构变更
         final int newSize;
         if ((newSize = size - 1) > i)
             System.arraycopy(es, i + 1, es, i, newSize - i);
@@ -680,7 +681,7 @@ public class ArrayList<E> extends AbstractList<E>
      * be empty after this call returns.
      */
     public void clear() {
-        modCount++;
+        modCount++; // 结构变更
         final Object[] es = elementData;
         for (int to = size, i = size = 0; i < to; i++)
             es[i] = null;
@@ -701,7 +702,7 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public boolean addAll(Collection<? extends E> c) {
         Object[] a = c.toArray();
-        modCount++;
+        modCount++; // 结构变更
         int numNew = a.length;
         if (numNew == 0)
             return false;

@@ -144,6 +144,7 @@ public class Hashtable<K,V>
     private transient Entry<?,?>[] table;
 
     /**
+     * <p>元素数量</p>
      * The total number of entries in the hash table.
      */
     private transient int count;
@@ -351,8 +352,11 @@ public class Hashtable<K,V>
      */
     public synchronized boolean containsKey(Object key) {
         Entry<?,?> tab[] = table;
+
+        // 计算key对应表中下标
         int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
+
         for (Entry<?,?> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
                 return true;
@@ -379,8 +383,12 @@ public class Hashtable<K,V>
     @SuppressWarnings("unchecked")
     public synchronized V get(Object key) {
         Entry<?,?> tab[] = table;
+
+        // 计算key对应表中下标
         int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
+
+        // 遍历查找
         for (Entry<?,?> e = tab[index] ; e != null ; e = e.next) {
             if ((e.hash == hash) && e.key.equals(key)) {
                 return (V)e.value;
@@ -410,7 +418,7 @@ public class Hashtable<K,V>
         Entry<?,?>[] oldMap = table;
 
         // overflow-conscious code
-        int newCapacity = (oldCapacity << 1) + 1;
+        int newCapacity = (oldCapacity << 1) + 1; // 2n + 1
         if (newCapacity - MAX_ARRAY_SIZE > 0) {
             if (oldCapacity == MAX_ARRAY_SIZE)
                 // Keep running with MAX_ARRAY_SIZE buckets
@@ -480,7 +488,14 @@ public class Hashtable<K,V>
         // Makes sure the key is not already in the hashtable.
         Entry<?,?> tab[] = table;
         int hash = key.hashCode();
-        int index = (hash & 0x7FFFFFFF) % tab.length;
+
+        /**
+         * @see Integer#MAX_VALUE
+         */
+        // 对表长度取模，保证索引在合法范围内。
+        int index = (hash & 0x7FFFFFFF) % tab.length; // 0x7FFFFFFF: Integer.MAX_VALUE
+
+        // 检查key在表中是否存在。
         @SuppressWarnings("unchecked")
         Entry<K,V> entry = (Entry<K,V>)tab[index];
         for(; entry != null ; entry = entry.next) {
@@ -491,6 +506,7 @@ public class Hashtable<K,V>
             }
         }
 
+        // 表中不存在key，添加(key, value)
         addEntry(hash, key, value, index);
         return null;
     }
@@ -506,8 +522,11 @@ public class Hashtable<K,V>
      */
     public synchronized V remove(Object key) {
         Entry<?,?> tab[] = table;
+
+        // 计算key对应表中下标
         int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
+
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
         for(Entry<K,V> prev = null ; e != null ; prev = e, e = e.next) {
@@ -933,8 +952,11 @@ public class Hashtable<K,V>
 
         // Makes sure the key is not already in the hashtable.
         Entry<?,?> tab[] = table;
+
+        // 计算key对应表中下标
         int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
+
         @SuppressWarnings("unchecked")
         Entry<K,V> entry = (Entry<K,V>)tab[index];
         for (; entry != null; entry = entry.next) {
@@ -956,8 +978,11 @@ public class Hashtable<K,V>
         Objects.requireNonNull(value);
 
         Entry<?,?> tab[] = table;
+
+        // 计算key对应表中下标
         int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
+
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
         for (Entry<K,V> prev = null; e != null; prev = e, e = e.next) {
@@ -981,8 +1006,11 @@ public class Hashtable<K,V>
         Objects.requireNonNull(oldValue);
         Objects.requireNonNull(newValue);
         Entry<?,?> tab[] = table;
+
+        // 计算key对应表中下标
         int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
+
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
         for (; e != null; e = e.next) {
@@ -1109,8 +1137,11 @@ public class Hashtable<K,V>
         Objects.requireNonNull(remappingFunction);
 
         Entry<?,?> tab[] = table;
+
+        // 计算key对应表中下标
         int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
+
         @SuppressWarnings("unchecked")
         Entry<K,V> e = (Entry<K,V>)tab[index];
         for (Entry<K,V> prev = null; e != null; prev = e, e = e.next) {

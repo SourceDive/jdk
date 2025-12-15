@@ -93,6 +93,7 @@ public class Vector<E>
     implements List<E>, RandomAccess, Cloneable, java.io.Serializable
 {
     /**
+     * <p>存储数据的数组。</p>
      * The array buffer into which the components of the vector are
      * stored. The capacity of the vector is the length of this array buffer,
      * and is at least large enough to contain all the vector's elements.
@@ -529,6 +530,7 @@ public class Vector<E>
     }
 
     /**
+     * <p>set不会导致结构变更.</p>
      * Sets the component at the specified {@code index} of this
      * vector to be the specified object. The previous component at that
      * position is discarded.
@@ -587,7 +589,7 @@ public class Vector<E>
         if (j > 0) {
             System.arraycopy(elementData, index + 1, elementData, index, j);
         }
-        modCount++;
+        modCount++; // 结构变更
         elementCount--;
         elementData[elementCount] = null; /* to let gc do its work */
     }
@@ -620,7 +622,7 @@ public class Vector<E>
             throw new ArrayIndexOutOfBoundsException(index
                                                      + " > " + elementCount);
         }
-        modCount++;
+        modCount++; // 结构变更
         final int s = elementCount;
         Object[] elementData = this.elementData;
         if (s == elementData.length)
@@ -644,7 +646,7 @@ public class Vector<E>
      * @param   obj   the component to be added
      */
     public synchronized void addElement(E obj) {
-        modCount++;
+        modCount++; // 结构变更
         add(obj, elementData, elementCount);
     }
 
@@ -664,7 +666,7 @@ public class Vector<E>
      *          vector; {@code false} otherwise.
      */
     public synchronized boolean removeElement(Object obj) {
-        modCount++;
+        modCount++; // 结构变更
         int i = indexOf(obj);
         if (i >= 0) {
             removeElementAt(i);
@@ -823,7 +825,7 @@ public class Vector<E>
      * @since 1.2
      */
     public synchronized boolean add(E e) {
-        modCount++;
+        modCount++; // 结构变更
         add(e, elementData, elementCount);
         return true;
     }

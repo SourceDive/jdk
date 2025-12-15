@@ -375,7 +375,7 @@ public final class Scanner implements Iterator<String>, Closeable {
     // Number of times this scanner's state has been modified.
     // Generally incremented on most public APIs and checked
     // within spliterator implementations.
-    int modCount;
+    int modCount; // 修改次数。
 
     // A pattern for java whitespace
     private static Pattern WHITESPACE_PATTERN = Pattern.compile(
