@@ -175,6 +175,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /* ---------------- Small Utilities -------------- */
 
     /**
+     * <p>hash函数。</p>
      * Applies a supplemental hash function to a given hashCode, which
      * defends against poor quality hash functions.  This is critical
      * because ConcurrentHashMap uses power-of-two length hash tables,
@@ -285,6 +286,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         transient volatile int count;
 
         /**
+         * <p>结构修改次数。</p>
          * Number of updates that alter the size of the table. This is
          * used during bulk-read methods to make sure they see a
          * consistent snapshot: If modCounts change during a traversal
@@ -295,6 +297,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         transient int modCount;
 
         /**
+         * <p>阈值</p>
          * The table is rehashed when its size exceeds this threshold.
          * (The value of this field is always <tt>(int)(capacity *
          * loadFactor)</tt>.)
@@ -445,8 +448,11 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
             lock();
             try {
                 int c = count;
+
+                // 扩容
                 if (c++ > threshold) // ensure capacity
                     rehash();
+
                 HashEntry<K,V>[] tab = table;
                 int index = hash & (tab.length - 1);
                 HashEntry<K,V> first = tab[index];
