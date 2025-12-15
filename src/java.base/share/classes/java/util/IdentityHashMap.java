@@ -180,6 +180,7 @@ public class IdentityHashMap<K,V>
     int size;
 
     /**
+     * <p>结构变更次数。</p>
      * The number of modifications, to support fast-fail iterators
      */
     transient int modCount;
@@ -289,6 +290,8 @@ public class IdentityHashMap<K,V>
     }
 
     /**
+     * <p>返回算出来后的下标。</p>
+     * <p>哈希函数。</p>
      * Returns index for Object x.
      */
     private static int hash(Object x, int length) {
@@ -326,7 +329,10 @@ public class IdentityHashMap<K,V>
         Object k = maskNull(key);
         Object[] tab = table;
         int len = tab.length;
+
+        // 计算下标
         int i = hash(k, len);
+
         while (true) {
             Object item = tab[i];
             if (item == k)

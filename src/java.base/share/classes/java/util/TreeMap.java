@@ -128,6 +128,7 @@ public class TreeMap<K,V>
     private transient int size = 0;
 
     /**
+     * <p>结构变更次数。</p>
      * The number of structural modifications to the tree.
      */
     private transient int modCount = 0;

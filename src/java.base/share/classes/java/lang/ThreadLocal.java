@@ -706,6 +706,7 @@ public class ThreadLocal<T> {
         }
 
         /**
+         * <p>重哈希。</p>
          * Double the capacity of the table.
          */
         private void resize() {

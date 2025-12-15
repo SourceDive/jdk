@@ -513,7 +513,7 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public void add(int index, E element) {
         rangeCheckForAdd(index);
-        modCount++; // 结构变更，修改次数++
+        modCount++; // 结构变更次数++
         final int s;
         Object[] elementData;
         if ((s = size) == (elementData = this.elementData).length)

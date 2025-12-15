@@ -405,7 +405,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     transient int size;
 
     /**
-     * <p>修改次数。</p>
+     * <p>结构变更次数。</p>
      * The number of times this HashMap has been structurally modified
      * Structural modifications are those that change the number of mappings in
      * the HashMap or otherwise modify its internal structure (e.g.,
