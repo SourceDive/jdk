@@ -362,6 +362,7 @@ public class ThreadLocal<T> {
         private int size = 0;
 
         /**
+         * <p>扩容阈值</p>
          * The next size value at which to resize.
          */
         private int threshold; // Default to 0
@@ -420,7 +421,10 @@ public class ThreadLocal<T> {
                     if (key != null) {
                         Object value = key.childValue(e.value);
                         Entry c = new Entry(key, value);
+
+                        // 计算下标
                         int h = key.threadLocalHashCode & (len - 1);
+
                         while (table[h] != null)
                             h = nextIndex(h, len);
                         table[h] = c;
@@ -492,16 +496,17 @@ public class ThreadLocal<T> {
             int len = tab.length;
             int i = key.threadLocalHashCode & (len-1);
 
-            for (Entry e = tab[i];
-                 e != null;
-                 e = tab[i = nextIndex(i, len)]) {
+            for (Entry e = tab[i]; e != null; e = tab[i = nextIndex(i, len)]) {
+
                 ThreadLocal<?> k = e.get();
 
+                // key 存在，更新
                 if (k == key) {
                     e.value = value;
                     return;
                 }
 
+                // key 为null，被视为过期
                 if (k == null) {
                     replaceStaleEntry(key, value, i);
                     return;
