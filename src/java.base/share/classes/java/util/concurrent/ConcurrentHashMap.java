@@ -562,6 +562,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final int MIN_TREEIFY_CAPACITY = 64;
 
     /**
+     * <p>每个线程一次要迁移的桶数量(最小16)。</p>
+     * <p>stride: 步长。</p>
      * Minimum number of rebinnings per transfer step. Ranges are
      * subdivided to allow multiple resizer threads.  This value
      * serves as a lower bound to avoid resizers encountering
@@ -577,6 +579,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     private static final int RESIZE_STAMP_BITS = 16;
 
     /**
+     * <p>协助迁移的线程最大数量。</p>
      * The maximum number of threads that can help resize.
      * Must fit in 32 - RESIZE_STAMP_BITS bits.
      */
@@ -765,7 +768,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     static final <K,V> boolean casTabAt(Node<K,V>[] tab, int i,
-                                        Node<K,V> c, Node<K,V> v) {
+                                        Node<K,V> c/*预期值*/, Node<K,V> v /*更新值*/) {
         return U.compareAndSetReference(tab, ((long)i << ASHIFT) + ABASE, c, v);
     }
 
@@ -1050,6 +1053,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
             // 桶是否正在迁移
             else if ((fh = f.hash) == MOVED)
+                // 协助扩容
                 tab = helpTransfer(tab, f);
             else if (onlyIfAbsent // check first node without acquiring lock
                      && fh == hash
@@ -2255,7 +2259,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * A node inserted at head of bins during transfer operations.
      */
     static final class ForwardingNode<K,V> extends Node<K,V> {
-        final Node<K,V>[] nextTable;
+        final Node<K,V>[] nextTable; // 指向新表
+
         ForwardingNode(Node<K,V>[] tab) {
             super(MOVED, null, null);
             this.nextTable = tab;
@@ -2311,7 +2316,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Must be negative when shifted left by RESIZE_STAMP_SHIFT.
      */
     static final int resizeStamp(int n) {
-        return Integer.numberOfLeadingZeros(n) | (1 << (RESIZE_STAMP_BITS - 1));
+        return Integer.numberOfLeadingZeros(n)
+                | (1 << (RESIZE_STAMP_BITS - 1)); // 1 左移 15位。 1 + (15个0)
     }
 
     /**
@@ -2424,17 +2430,31 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * <p>协助扩容。</p>
      * Helps transfer if a resize is in progress.
      */
     final Node<K,V>[] helpTransfer(Node<K,V>[] tab, Node<K,V> f) {
         Node<K,V>[] nextTab; int sc;
-        if (tab != null && (f instanceof ForwardingNode) &&
-            (nextTab = ((ForwardingNode<K,V>)f).nextTable) != null) {
+
+        // 1、当前表存在
+        // 2、f 是转发结点
+        // 3、新表存在
+        if (tab != null
+                && (f instanceof ForwardingNode)
+                && (nextTab = ((ForwardingNode<K,V>)f).nextTable) != null)
+        {
             int rs = resizeStamp(tab.length) << RESIZE_STAMP_SHIFT;
-            while (nextTab == nextTable && table == tab &&
-                   (sc = sizeCtl) < 0) {
-                if (sc == rs + MAX_RESIZERS || sc == rs + 1 ||
-                    transferIndex <= 0)
+
+            // 1、新表没有变更
+            // 2、当前表没有变更
+            // 3、扩容还在进行
+            while (nextTab == nextTable
+                    && table == tab
+                    && (sc = sizeCtl) < 0)
+            {
+                if (sc == rs + MAX_RESIZERS
+                        || sc == rs + 1
+                        || transferIndex <= 0)
                     break;
                 if (U.compareAndSetInt(this, SIZECTL, sc, sc + 1)) {
                     transfer(tab, nextTab);
@@ -2484,29 +2504,38 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * <p>转移。</p>
+     * <p>扩容转移。</p>
      * Moves and/or copies the nodes in each bin to new table. See
      * above for explanation.
      */
     private final void transfer(Node<K,V>[] tab, Node<K,V>[] nextTab) {
-        int n = tab.length, stride;
+        int n = tab.length, stride/*线程迁移bucket数量*/;
+
+        // 设置迁移数量
         if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
-            stride = MIN_TRANSFER_STRIDE; // subdivide range
+            stride = MIN_TRANSFER_STRIDE; // subdivide range 划分区间
+
+        // (1) 新建新表
         if (nextTab == null) {            // initiating
             try {
+                // 新建新表。
                 @SuppressWarnings("unchecked")
-                Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n << 1];
-                nextTab = nt; // 新建数组后赋值变量
+                Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n << 1]; // 容量*2
+
+                // 新建后赋值变量
+                nextTab = nt;
             } catch (Throwable ex) {      // try to cope with OOME
                 sizeCtl = Integer.MAX_VALUE;
                 return;
             }
-            nextTable = nextTab;
+            nextTable = nextTab; // 发布新表引用(注意这种说法)
             transferIndex = n;
         }
+
+        // (2) 迁移
         int nextn = nextTab.length;
         ForwardingNode<K,V> fwd = new ForwardingNode<K,V>(nextTab);
-        boolean advance = true;
+        boolean advance = true; // 是否推进
         boolean finishing = false; // to ensure sweep before committing nextTab
         for (int i = 0, bound = 0;;) {
             Node<K,V> f; int fh;
@@ -2546,6 +2575,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             }
             else if ((f = tabAt(tab, i)) == null)
                 advance = casTabAt(tab, i, null, fwd);
+
+            // 已经被迁移
             else if ((fh = f.hash) == MOVED)
                 advance = true; // already processed
             else {
