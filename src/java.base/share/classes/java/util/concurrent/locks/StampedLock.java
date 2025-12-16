@@ -1401,7 +1401,7 @@ public class StampedLock implements java.io.Serializable {
             else if (!WCOWAIT.compareAndSet(p, node.cowait = p.cowait, node))
                 node.cowait = null;
             else {
-                for (;;) {
+                for (;;) { // 无穷循环
                     WNode pp, c; Thread w;
                     if ((h = whead) != null && (c = h.cowait) != null &&
                         WCOWAIT.compareAndSet(h, c, c.cowait) &&

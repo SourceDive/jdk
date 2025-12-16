@@ -3468,7 +3468,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             Node<K,V> e;
             if ((e = next) != null)
                 e = e.next;
-            for (;;) {
+
+            for (;;) { // 无穷循环
                 Node<K,V>[] t; int i, n;  // must use locals in checks
                 if (e != null)
                     return next = e;
