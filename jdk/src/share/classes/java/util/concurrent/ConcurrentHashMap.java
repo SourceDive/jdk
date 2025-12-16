@@ -774,10 +774,13 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
         if (check != sum) { // Resort to locking all segments
             sum = 0;
+            // 对所有的 sgement 加锁
             for (int i = 0; i < segments.length; ++i)
                 segments[i].lock();
+            // 累加
             for (int i = 0; i < segments.length; ++i)
                 sum += segments[i].count;
+            // 对所有的 sgement 解锁
             for (int i = 0; i < segments.length; ++i)
                 segments[i].unlock();
         }
