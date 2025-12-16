@@ -2371,9 +2371,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         CounterCell[] cs; // 多个计数单元
         long b, s;
 
+        // 1、计数
         // 分段计数条件：
-        // 1、counterCells 不为空
-        // 2、CAS 更新计数失败
+        // (1) counterCells 不为空
+        // (2) CAS 更新计数失败
         if ((cs = counterCells) != null ||
             !U.compareAndSetLong(this, BASECOUNT, b = baseCount, s = b + x)) { // 这里CAS更新如果成功就直接可以了。
             CounterCell c; long v; int m;
@@ -2391,12 +2392,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             s = sumCount();
         }
 
+        // 2、扩容
         if (check >= 0) {
             Node<K,V>[] tab, nt; int n, sc;
             // 扩容条件：
-            // 1、计数后的数量大于阈值
-            // 2、表已经初始化
-            // 3、当前还可以扩容
+            // (1)计数后的数量大于阈值
+            // (2)表已经初始化
+            // (3)当前还可以扩容
             while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
                    (n = tab.length) < MAXIMUM_CAPACITY) {
 
@@ -2417,13 +2419,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
                     // 协助扩容
                     if (U.compareAndSetInt(this, SIZECTL, sc, sc + 1)) // CAS 更新扩容的线程数量
-                        transfer(tab, nt);
+                        transfer(tab, nt); // 此时新表已经创建出来了。
                 }
 
-                // ==> 扩容开始
                 // 还未进行扩容，当前线程触发扩容
                 else if (U.compareAndSetInt(this, SIZECTL, sc, rs + 2))
-                    transfer(tab, null);
+                    // ==> 扩容开始
+                    transfer(tab, null); // 首次创建时新表还不存在
                 s = sumCount();
             }
         }
@@ -2450,12 +2452,17 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             // 3、扩容还在进行
             while (nextTab == nextTable
                     && table == tab
-                    && (sc = sizeCtl) < 0)
+                    && (sc = sizeCtl) < 0) // 这里因为前面的检查，表已经创建出来了，所以肯定这里不是-1初始化了。
             {
+                // 1、迁移线程数量达到最大值
+                // 2、迁移已结束
+                // 3、当前任务已分配完毕，没有新任务
                 if (sc == rs + MAX_RESIZERS
                         || sc == rs + 1
                         || transferIndex <= 0)
                     break;
+
+                // 协助迁移，当前线程数量+1
                 if (U.compareAndSetInt(this, SIZECTL, sc, sc + 1)) {
                     transfer(tab, nextTab);
                     break;
@@ -2515,7 +2522,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
             stride = MIN_TRANSFER_STRIDE; // subdivide range 划分区间
 
-        // (1) 新建新表
+        // (1) 新表不存在，则创建新表
         if (nextTab == null) {            // initiating
             try {
                 // 新建新表。
