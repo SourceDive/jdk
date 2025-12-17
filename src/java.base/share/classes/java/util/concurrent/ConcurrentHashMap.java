@@ -956,20 +956,30 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     public V get(Object key) {
         Node<K,V>[] tab; Node<K,V> e, p; int n, eh; K ek;
         int h = spread(key.hashCode());
-        if ((tab = table) != null && (n = tab.length) > 0 &&
-            (e = tabAt(tab, (n - 1) & h)) != null) {
+
+        // 1、表存在
+        // 2、表不空
+        // 3、定位到的桶不空
+        if ((tab = table) != null
+                && (n = tab.length) > 0
+                && (e = tabAt(tab, (n - 1) & h)) != null)
+        {
+            // 桶的第一个结点就是我们要找的
             if ((eh = e.hash) == h) {
                 if ((ek = e.key) == key || (ek != null && key.equals(ek)))
                     return e.val;
             }
             else if (eh < 0)
                 return (p = e.find(h, key)) != null ? p.val : null;
+
             while ((e = e.next) != null) {
                 if (e.hash == h &&
                     ((ek = e.key) == key || (ek != null && key.equals(ek))))
                     return e.val;
             }
         }
+
+        // key不存在
         return null;
     }
 
@@ -1035,18 +1045,20 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         int hash = spread(key.hashCode());
         int binCount = 0;
+
         for (Node<K,V>[] tab = table;;) {
             Node<K,V> f; // firstNode
-            int n/*tableLength*/, i/*bucketIndex*/, fh/*firstNodeHash*/; K fk; V fv;
+            int n/*tableLength*/, i/*bucketIndex*/, fh/*firstNodeHash*/;
+            K fk/*first node key*/; V fv/*first node value*/;
 
             // 初始化 table
             // 如果table为空，则首次循环进行初始化，下次循环才进行插入。
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
 
-            // 桶是否为空
+            // 对应下标的桶是否存在
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
-                // 原子写入
+                // 原子写入新结点
                 if (casTabAt(tab, i, null, new Node<K,V>(hash, key, value)))
                     break;                   // no lock when adding to empty bin
             }
@@ -1106,7 +1118,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
             }
         }
+
+        // 计数及扩容
         addCount(1L, binCount);
+
         return null;
     }
 
@@ -2270,22 +2285,39 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             // loop to avoid arbitrarily deep recursion on forwarding nodes
             outer: for (Node<K,V>[] tab = nextTable;;) {
                 Node<K,V> e; int n;
-                if (k == null || tab == null || (n = tab.length) == 0 ||
-                    (e = tabAt(tab, (n - 1) & h)) == null)
+
+                // 直接返回
+                // 1、key 为 null
+                // 2、新表不存在
+                // 3、新表为空
+                // 4、对应下标的桶不存在
+                if (k == null
+                        || tab == null
+                        || (n = tab.length) == 0
+                        || (e = tabAt(tab, (n - 1) & h)) == null)
                     return null;
+
+                // 遍历查找
                 for (;;) {
                     int eh; K ek;
-                    if ((eh = e.hash) == h &&
-                        ((ek = e.key) == k || (ek != null && k.equals(ek))))
+                    // 找到了
+                    if ((eh = e.hash) == h
+                            && ((ek = e.key) == k
+                            || (ek != null && k.equals(ek))))
                         return e;
+
+                    // 遇到特殊结点
                     if (eh < 0) {
+                        // 转发结点（再次扩容）
                         if (e instanceof ForwardingNode) {
-                            tab = ((ForwardingNode<K,V>)e).nextTable;
-                            continue outer;
+                            tab = ((ForwardingNode<K,V>)e).nextTable; // 再次进行扩容的新表
+                            continue outer; // 去扩容的新表中查
                         }
                         else
                             return e.find(h, k);
                     }
+
+                    // 没找到
                     if ((e = e.next) == null)
                         return null;
                 }
@@ -2375,8 +2407,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         // 分段计数条件：
         // (1) counterCells 不为空
         // (2) CAS 更新计数失败
-        if ((cs = counterCells) != null ||
-            !U.compareAndSetLong(this, BASECOUNT, b = baseCount, s = b + x)) { // 这里CAS更新如果成功就直接可以了。
+        if ((cs = counterCells) != null
+                || !U.compareAndSetLong(this, BASECOUNT, b = baseCount, s = b + x)) { // 这里CAS更新如果成功就表示计数成功。
             CounterCell c; long v; int m;
             boolean uncontended = true;
             if (cs == null || (m = cs.length - 1) < 0 ||
@@ -2399,9 +2431,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             // (1)计数后的数量大于阈值
             // (2)表已经初始化
             // (3)当前还可以扩容
-            while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
-                   (n = tab.length) < MAXIMUM_CAPACITY) {
-
+            while (s >= (long)(sc = sizeCtl)
+                    && (tab = table) != null
+                    && (n = tab.length) < MAXIMUM_CAPACITY)
+            {
                 // 将扩容戳移动到高16位，给线程计数腾出位置。
                 // (前16位) 扩容戳 | (后16位) 线程数
                 int rs = resizeStamp(n) << RESIZE_STAMP_SHIFT/*16*/;
@@ -2515,14 +2548,16 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Moves and/or copies the nodes in each bin to new table. See
      * above for explanation.
      */
-    private final void transfer(Node<K,V>[] tab, Node<K,V>[] nextTab) {
-        int n = tab.length, stride/*线程迁移bucket数量*/;
+    private final void transfer(Node<K,V>[] tab,        // 当前表
+                                Node<K,V>[] nextTab) {  // 新表
+        int n = tab.length,
+                stride/*线程迁移bucket数量*/;
 
-        // 设置迁移数量
+        // 设置每个线程要迁移的桶数量
         if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
             stride = MIN_TRANSFER_STRIDE; // subdivide range 划分区间
 
-        // (1) 新表不存在，则创建新表
+        // (1) 新表不存在，创建新表
         if (nextTab == null) {            // initiating
             try {
                 // 新建新表。
@@ -2539,9 +2574,11 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             transferIndex = n;
         }
 
-        // (2) 迁移
+        // (2) 新表存在，执行迁移
         int nextn = nextTab.length;
-        ForwardingNode<K,V> fwd = new ForwardingNode<K,V>(nextTab);
+        // 创建转发结点
+        ForwardingNode<K,V> fwd = new ForwardingNode<K,V>(nextTab); // 注意转发结点的hash为 MOVED
+
         boolean advance = true; // 是否推进
         boolean finishing = false; // to ensure sweep before committing nextTab
         for (int i = 0, bound = 0;;) {
@@ -2563,6 +2600,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     advance = false;
                 }
             }
+
             if (i < 0 || i >= n || i + n >= nextn) {
                 int sc;
                 if (finishing) {
@@ -2571,6 +2609,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     sizeCtl = (n << 1) - (n >>> 1);
                     return;
                 }
+
                 if (U.compareAndSetInt(this, SIZECTL, sc = sizeCtl, sc - 1)) {
                     if ((sc - 2) != resizeStamp(n) << RESIZE_STAMP_SHIFT)
                         return;
@@ -2580,7 +2619,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     i = n; // recheck before commit
                 }
             }
-            else if ((f = tabAt(tab, i)) == null)
+            else if ((f = tabAt(tab, i)) == null) // todo 这里的位置为什么会是null的场景？
                 advance = casTabAt(tab, i, null, fwd);
 
             // 已经被迁移
