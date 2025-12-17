@@ -588,7 +588,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * The bit shift for recording size stamp in sizeCtl.
      */
-    private static final int RESIZE_STAMP_SHIFT = 32 - RESIZE_STAMP_BITS;
+    private static final int RESIZE_STAMP_SHIFT = 32 - RESIZE_STAMP_BITS; // 值为16
 
     /*
      * Encodings for Node hash fields. See above for explanation.
@@ -669,6 +669,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
          */
         Node<K,V> find(int h, Object k) {
             Node<K,V> e = this;
+
+            // 遍历链表，寻找key
             if (k != null) {
                 do {
                     K ek;
@@ -779,15 +781,19 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /* ---------------- Fields -------------- */
 
     /**
+     * <p>哈希表</p>
+     * <p>存放桶的数组.</p>
+     * <p>注意数组中桶总是存在的，区别是里面有东西还是没东西。</p>
      * The array of bins. Lazily initialized upon first insertion.
      * Size is always a power of two. Accessed directly by iterators.
      */
     transient volatile Node<K,V>[] table;
 
     /**
+     * <p>扩容时的新表</p>
      * The next table to use; non-null only while resizing.
      */
-    private transient volatile Node<K,V>[] nextTable; // 扩容时的新数组
+    private transient volatile Node<K,V>[] nextTable;
 
     /**
      * Base counter value, used mainly when there is no contention,
@@ -2290,7 +2296,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 // 1、key 为 null
                 // 2、新表不存在
                 // 3、新表为空
-                // 4、对应下标的桶不存在
+                // 4、对应下标的桶是空的
                 if (k == null
                         || tab == null
                         || (n = tab.length) == 0
@@ -2571,7 +2577,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 return;
             }
             nextTable = nextTab; // 发布新表引用(注意这种说法)
-            transferIndex = n;
+            transferIndex = n;   // 从最后一个桶开始迁移
         }
 
         // (2) 新表存在，执行迁移
@@ -2601,33 +2607,44 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
             }
 
+            // 合法性检查
+            // 结束的入口
             if (i < 0 || i >= n || i + n >= nextn) {
                 int sc;
                 if (finishing) {
                     nextTable = null; // 扩容完成后，设置新表为null.
-                    table = nextTab;
+                    table = nextTab;  // 新表设置为当前表
                     sizeCtl = (n << 1) - (n >>> 1);
                     return;
                 }
 
                 if (U.compareAndSetInt(this, SIZECTL, sc = sizeCtl, sc - 1)) {
-                    if ((sc - 2) != resizeStamp(n) << RESIZE_STAMP_SHIFT)
+                    // 检查是否是最后一个线程
+                    if ((sc - 2) != resizeStamp(n) << RESIZE_STAMP_SHIFT/*16*/)
                         return;
 
+                    // sc - 2 == resizeStamp << 16 ==> 是最后一个线程
                     // ==> 扩容结束，回到初始阶段
                     finishing = advance = true;
                     i = n; // recheck before commit
                 }
             }
+
+            // 空桶，直接替换为 ForwardingNode.
             else if ((f = tabAt(tab, i)) == null) // todo 这里的位置为什么会是null的场景？
                 advance = casTabAt(tab, i, null, fwd);
 
-            // 已经被迁移
+            // 已经被迁移(fh是一个ForwardingNode)
             else if ((fh = f.hash) == MOVED)
                 advance = true; // already processed
+
+            // 1、f 不是空桶
+            // 2、f 不是 ForwardingNode
+            // ==> 尚未迁移的桶
             else {
-                synchronized (f) {
-                    if (tabAt(tab, i) == f) {
+                synchronized (f) { // 对桶进行加锁。
+                    if (tabAt(tab, i) == f) { // 锁定后再次检查，确认位置不变
+
                         Node<K,V> ln, hn;
                         if (fh >= 0) {
                             int runBit = fh & n;
@@ -2656,9 +2673,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                             }
                             setTabAt(nextTab, i, ln);
                             setTabAt(nextTab, i + n, hn);
+
+                            // 放上 ForwardingNode, 标识已被迁移
                             setTabAt(tab, i, fwd);
                             advance = true;
                         }
+
+                        // 树结点
                         else if (f instanceof TreeBin) {
                             TreeBin<K,V> t = (TreeBin<K,V>)f;
                             TreeNode<K,V> lo = null, loTail = null;
