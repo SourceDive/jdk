@@ -52,6 +52,7 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 
 /**
+ * <p>当前线程的随机数生成器。</p>
  * A random number generator isolated to the current thread.  Like the
  * global {@link java.util.Random} generator used by the {@link
  * java.lang.Math} class, a {@code ThreadLocalRandom} is initialized

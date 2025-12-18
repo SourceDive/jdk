@@ -395,7 +395,9 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private static int runStateOf(int c)     { return c & ~COUNT_MASK; }
     // 获取工作线程数量
     private static int workerCountOf(int c)  { return c & COUNT_MASK; }
-    private static int ctlOf(int rs, int wc) { return rs | wc; } // 合并状态和数量
+
+    // 合并状态和数量
+    private static int ctlOf(int rs/*run state*/, int wc/*worker count*/) { return rs | wc; }
 
     /*
      * Bit field accessors that don't require unpacking ctl.
@@ -1072,14 +1074,15 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private Runnable getTask() {
         boolean timedOut = false; // Did the last poll() time out?
 
-        for (;;) {
+        for (;;) { // 无限循环
 
             // 1、检查线程池状态。
             int c = ctl.get();
 
             // Check if queue empty only if necessary.
             if (runStateAtLeast(c, SHUTDOWN)
-                && (runStateAtLeast(c, STOP) || workQueue.isEmpty())) {
+                && (runStateAtLeast(c, STOP) || workQueue.isEmpty()))
+            {
                 decrementWorkerCount();
                 return null;
             }

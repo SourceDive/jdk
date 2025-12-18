@@ -1268,8 +1268,9 @@ public abstract class AbstractQueuedSynchronizer
      *        can represent anything you like.
      */
     public final void acquire(int arg) {
-        if (!tryAcquire(arg) &&
-            acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+        if (!tryAcquire(arg)
+                && acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
+
             selfInterrupt();
     }
 
