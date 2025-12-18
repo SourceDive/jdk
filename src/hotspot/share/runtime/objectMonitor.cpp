@@ -1220,6 +1220,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   Self->_Stalled = intptr_t(this);
   jt->set_current_waiting_monitor(this);
 
+    // 创建等待结点
   // create a node to be put into the queue
   // Critically, after we reset() the event but prior to park(), we must check
   // for a pending interrupt.
@@ -1228,6 +1229,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   Self->_ParkEvent->reset();
   OrderAccess::fence();          // ST into Event; membar ; LD interrupted-flag
 
+    // 结点进入等待队列
   // Enter the waiting queue, which is a circular doubly linked list in this case
   // but it could be a priority queue or any data structure.
   // _WaitSetLock protects the wait queue.  Normally the wait queue is accessed only
@@ -1242,7 +1244,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   _Responsible = NULL;
 
   intptr_t save = _recursions; // record the old recursion count
-  _waiters++;                  // increment the number of waiters
+  _waiters++;                  // increment the number of waiters 增加等待线程数量
   _recursions = 0;             // set the recursion level to be 1
   exit(true, Self);                    // exit the monitor
   guarantee(_owner != Self, "invariant");
@@ -1316,6 +1318,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     if (_succ == Self) _succ = NULL;
     WasNotified = node._notified;
 
+      // 重新获取监视器
     // Reentry phase -- reacquire the monitor.
     // re-enter contended monitor after object.wait().
     // retain OBJECT_WAIT state until re-enter successfully completes
