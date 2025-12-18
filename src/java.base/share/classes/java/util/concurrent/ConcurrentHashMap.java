@@ -1062,7 +1062,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
 
-            // 对应下标的桶是否存在
+            // 桶为空
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
                 // 原子写入新结点
                 if (casTabAt(tab, i, null, new Node<K,V>(hash, key, value)))
@@ -1078,29 +1078,44 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                      && ((fk = f.key) == key || (fk != null && key.equals(fk)))
                      && (fv = f.val) != null)
                 return fv;
+
+            // 插入元素条件
+            // (1) 桶不空
+            // (2) 桶没在迁移
             else {
                 V oldVal = null;
-                synchronized (f) {
-                    if (tabAt(tab, i) == f) {
+                synchronized (f) { // 锁住桶
+                    if (tabAt(tab, i) == f) { // 双重检查
+                        // 结点是链表
                         if (fh >= 0) {
                             binCount = 1;
+
+                            // 遍历每个桶
                             for (Node<K,V> e = f;; ++binCount) {
                                 K ek;
-                                if (e.hash == hash &&
-                                    ((ek = e.key) == key ||
-                                     (ek != null && key.equals(ek)))) {
+                                // key 已经存在
+                                if (e.hash == hash
+                                        && ((ek = e.key) == key
+                                        || (ek != null && key.equals(ek))))
+                                {
                                     oldVal = e.val;
+                                    // 是否覆盖旧值
                                     if (!onlyIfAbsent)
                                         e.val = value;
                                     break;
                                 }
+
+                                // key 不存在，插入
                                 Node<K,V> pred = e;
+                                // 走到链表尾部
                                 if ((e = e.next) == null) {
                                     pred.next = new Node<K,V>(hash, key, value);
                                     break;
                                 }
                             }
                         }
+
+                        // 结点是树
                         else if (f instanceof TreeBin) {
                             Node<K,V> p;
                             binCount = 2;
