@@ -360,6 +360,7 @@ public class Object {
     /**
      * <p>调用者：当前线程必须持有这个 object 的 monitor lock.</p>
      * <p>面向当前线程，将自己加入等待队列。</p>
+     * <p>会放弃关于这个对象的同步。</p>
      * <p>此操作可以被中断。</p>
      * Causes the current thread to wait until it is awakened, typically
      * by being <em>notified</em> or <em>interrupted</em>, or until a
