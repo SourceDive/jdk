@@ -121,7 +121,8 @@ abstract class Striped64 extends Number {
      * JVM intrinsics note: It would be possible to use a release-only
      * form of CAS here, if it were provided.
      */
-    @jdk.internal.vm.annotation.Contended static final class Cell {
+    @jdk.internal.vm.annotation.Contended
+    static final class Cell {
         volatile long value;
         Cell(long x) { value = x; }
         final boolean cas(long cmp, long val) {
@@ -158,10 +159,11 @@ abstract class Striped64 extends Number {
     transient volatile Cell[] cells;
 
     /**
+     * <p>无竞争时使用。</p>
      * Base value, used mainly when there is no contention, but also as
      * a fallback during table initialization races. Updated via CAS.
      */
-    transient volatile long base;
+    transient volatile long base; // 这里的volatile保证可见性
 
     /**
      * Spinlock (locked via CAS) used when resizing and/or creating Cells.
@@ -233,7 +235,9 @@ abstract class Striped64 extends Number {
             h = getProbe();
             wasUncontended = true;
         }
-        boolean collide = false;                // True if last slot nonempty
+        // 碰撞标志
+        boolean collide = false;    // True if last slot nonempty
+
         done: for (;;) {
             Cell[] cs; Cell c; int n; long v;
             if ((cs = cells) != null && (n = cs.length) > 0) {
@@ -278,10 +282,12 @@ abstract class Striped64 extends Number {
                 }
                 h = advanceProbe(h);
             }
+
+            // 创建 cells 数组
             else if (cellsBusy == 0 && cells == cs && casCellsBusy()) {
                 try {                           // Initialize table
                     if (cells == cs) {
-                        Cell[] rs = new Cell[2];
+                        Cell[] rs = new Cell[2]; // 初始为2
                         rs[h & 1] = new Cell(x);
                         cells = rs;
                         break done;

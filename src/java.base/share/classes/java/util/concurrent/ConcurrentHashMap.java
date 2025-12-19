@@ -978,6 +978,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             else if (eh < 0)
                 return (p = e.find(h, key)) != null ? p.val : null;
 
+            // 遍历链表
             while ((e = e.next) != null) {
                 if (e.hash == h &&
                     ((ek = e.key) == key || (ek != null && key.equals(ek))))
@@ -1181,23 +1182,35 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         int hash = spread(key.hashCode());
         for (Node<K,V>[] tab = table;;) {
             Node<K,V> f; int n, i, fh;
-            if (tab == null || (n = tab.length) == 0 ||
-                (f = tabAt(tab, i = (n - 1) & hash)) == null)
+
+            // 直接返回：
+            // 1、表不存在
+            // 2、表空
+            // 3、桶空
+            if (tab == null
+                    || (n = tab.length) == 0
+                    || (f = tabAt(tab, i = (n - 1) & hash)) == null)
                 break;
+
+            // 桶正在迁移
             else if ((fh = f.hash) == MOVED)
                 tab = helpTransfer(tab, f);
+            // 桶不为空
             else {
                 V oldVal = null;
                 boolean validated = false;
-                synchronized (f) {
-                    if (tabAt(tab, i) == f) {
+                synchronized (f) { // 锁住桶
+                    if (tabAt(tab, i) == f) { // 再次检查
+
+                        // 是链表结点
                         if (fh >= 0) {
                             validated = true;
                             for (Node<K,V> e = f, pred = null;;) {
                                 K ek;
-                                if (e.hash == hash &&
-                                    ((ek = e.key) == key ||
-                                     (ek != null && key.equals(ek)))) {
+                                if (e.hash == hash
+                                        && ((ek = e.key) == key
+                                        || (ek != null && key.equals(ek))))
+                                {
                                     V ev = e.val;
                                     if (cv == null || cv == ev ||
                                         (ev != null && cv.equals(ev))) {
@@ -1212,10 +1225,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                     break;
                                 }
                                 pred = e;
+
+                                // 结束
                                 if ((e = e.next) == null)
                                     break;
                             }
                         }
+                        // 是树结点
                         else if (f instanceof TreeBin) {
                             validated = true;
                             TreeBin<K,V> t = (TreeBin<K,V>)f;
@@ -1267,8 +1283,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 i = 0; // restart
             }
             else {
-                synchronized (f) {
-                    if (tabAt(tab, i) == f) {
+                synchronized (f) { // 锁住桶
+                    if (tabAt(tab, i) == f) { // 再次检查
                         Node<K,V> p = (fh >= 0 ? f :
                                        (f instanceof TreeBin) ?
                                        ((TreeBin<K,V>)f).first : null);

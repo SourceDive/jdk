@@ -38,6 +38,7 @@ package java.util.concurrent.atomic;
 import java.io.Serializable;
 
 /**
+ * <p>写入极快。比 AtomicLong 快多了。</p>
  * One or more variables that together maintain an initially zero
  * {@code long} sum.  When updates (method {@link #add}) are contended
  * across threads, the set of variables may grow dynamically to reduce
@@ -84,12 +85,19 @@ public class LongAdder extends Striped64 implements Serializable {
      */
     public void add(long x) {
         Cell[] cs; long b, v; int m; Cell c;
-        if ((cs = cells) != null || !casBase(b = base, b + x)) {
+
+        // 无竞争时，只需要使用 base
+        if ((cs = cells) != null
+                || !casBase(b = base, b + x)) // 更新失败，出现竞争
+        {
             boolean uncontended = true;
-            if (cs == null || (m = cs.length - 1) < 0 ||
-                (c = cs[getProbe() & m]) == null ||
-                !(uncontended = c.cas(v = c.value, v + x)))
+            if (cs == null // cells 还没初始化
+                    || (m = cs.length - 1) < 0
+                    || (c = cs[getProbe() & m]) == null
+                    || !(uncontended = c.cas(v = c.value, v + x)))
+            {
                 longAccumulate(x, null, uncontended);
+            }
         }
     }
 
@@ -108,6 +116,8 @@ public class LongAdder extends Striped64 implements Serializable {
     }
 
     /**
+     * <p>这个值可能不是实时精确的。</p>
+     * <p>这个算的是当前的快照，并不是最终的结果。</p>
      * Returns the current sum.  The returned value is <em>NOT</em> an
      * atomic snapshot; invocation in the absence of concurrent
      * updates returns an accurate result, but concurrent updates that
@@ -128,6 +138,7 @@ public class LongAdder extends Striped64 implements Serializable {
     }
 
     /**
+     * <p>重置为0.</p>
      * Resets variables maintaining the sum to zero.  This method may
      * be a useful alternative to creating a new adder, but is only
      * effective if there are no concurrent updates.  Because this
