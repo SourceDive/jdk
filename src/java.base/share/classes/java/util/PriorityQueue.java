@@ -112,6 +112,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     private final Comparator<? super E> comparator;
 
     /**
+     * <p>结构变更次数</p>
      * The number of times this priority queue has been
      * <i>structurally modified</i>.  See AbstractList for gory details.
      */
@@ -315,6 +316,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>插入元素</p>
      * Inserts the specified element into this priority queue.
      *
      * @return {@code true} (as specified by {@link Collection#add})
@@ -340,16 +342,21 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         if (e == null)
             throw new NullPointerException();
         modCount++;
-        int i = size;
+        int i = size; // 从最后一个元素开始
+
+        // 扩容
         if (i >= queue.length)
             grow(i + 1);
+
+        // 上浮
         siftUp(i, e);
+
         size = i + 1;
         return true;
     }
 
     public E peek() {
-        return (E) queue[0];
+        return (E) queue[0]; // 返回堆顶
     }
 
     private int indexOf(Object o) {
@@ -637,6 +644,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>上浮。</p>
      * Inserts item x at position k, maintaining heap invariant by
      * promoting x up the tree until it is greater than or equal to
      * its parent, or is the root.
@@ -655,8 +663,13 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             siftUpComparable(k, x, queue);
     }
 
-    private static <T> void siftUpComparable(int k, T x, Object[] es) {
+    private static <T> void siftUpComparable(int k,
+                                             T x,
+                                             Object[] es)
+    {
         Comparable<? super T> key = (Comparable<? super T>) x;
+
+        // 计算给定元素正确的下标
         while (k > 0) {
             int parent = (k - 1) >>> 1;
             Object e = es[parent];
@@ -665,23 +678,29 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             es[k] = e;
             k = parent;
         }
+
+        // 放入给定元素
         es[k] = key;
     }
 
-    private static <T> void siftUpUsingComparator(
-        int k, T x, Object[] es, Comparator<? super T> cmp) {
+    private static <T> void siftUpUsingComparator(int k,
+                                                  T x,
+                                                  Object[] es,
+                                                  Comparator<? super T> cmp)
+    {
         while (k > 0) {
-            int parent = (k - 1) >>> 1;
+            int parent = (k - 1) >>> 1; // 父结点下标
             Object e = es[parent];
-            if (cmp.compare(x, (T) e) >= 0)
+            if (cmp.compare(x, (T) e) >= 0) // 当前结点和父结点比较。
                 break;
-            es[k] = e;
-            k = parent;
+            es[k] = e; // 父结点到 k 位置
+            k = parent; // 父结点原先的位置给 x
         }
         es[k] = x;
     }
 
     /**
+     * <p>下浮</p>
      * Inserts item x at position k, maintaining heap invariant by
      * demoting x down the tree repeatedly until it is less than or
      * equal to its children or is a leaf.

@@ -2442,8 +2442,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         // 1、计数
         // 分段计数条件：
-        // (1) counterCells 不为空
-        // (2) CAS 更新计数失败
+        // (1) counterCells 存在
+        // 或者 (2) CAS 更新计数失败
         if ((cs = counterCells) != null
                 || !U.compareAndSetLong(this, BASECOUNT, b = baseCount, s = b + x)) { // 这里CAS更新如果成功就表示计数成功。
             CounterCell c; long v; int m;
@@ -2760,7 +2760,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * A padded cell for distributing counts.  Adapted from LongAdder
      * and Striped64.  See their internal docs for explanation.
      */
-    @jdk.internal.vm.annotation.Contended static final class CounterCell {
+    @jdk.internal.vm.annotation.Contended
+    static final class CounterCell {
         volatile long value;
         CounterCell(long x) { value = x; }
     }
@@ -2833,12 +2834,14 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
                 h = ThreadLocalRandom.advanceProbe(h);
             }
+
+            // 创建 CounterCell 数组
             else if (cellsBusy == 0 && counterCells == cs &&
                      U.compareAndSetInt(this, CELLSBUSY, 0, 1)) {
                 boolean init = false;
                 try {                           // Initialize table
                     if (counterCells == cs) {
-                        CounterCell[] rs = new CounterCell[2];
+                        CounterCell[] rs = new CounterCell[2]; // 初始为2
                         rs[h & 1] = new CounterCell(x);
                         counterCells = rs;
                         init = true;

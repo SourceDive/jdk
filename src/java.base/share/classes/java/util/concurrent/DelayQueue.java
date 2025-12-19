@@ -47,6 +47,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * <p>内部使用PriorityQueue实现。</p>
  * An unbounded {@linkplain BlockingQueue blocking queue} of
  * {@code Delayed} elements, in which an element can only be taken
  * when its delay has expired.  The <em>head</em> of the queue is that
@@ -99,6 +100,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     private Thread leader;
 
     /**
+     * <p>存在条件</p>
      * Condition signalled when a newer element becomes available
      * at the head of the queue or a new thread may need to
      * become leader.
@@ -213,6 +215,8 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
         try {
             for (;;) {
                 E first = q.peek();
+
+                // 等待存在条件
                 if (first == null)
                     available.await();
                 else {

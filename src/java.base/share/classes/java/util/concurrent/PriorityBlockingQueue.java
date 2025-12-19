@@ -155,6 +155,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     private transient Object[] queue;
 
     /**
+     * <p>队列中元素数量</p>
      * The number of elements in the priority queue.
      */
     private transient int size;
@@ -171,6 +172,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     private final ReentrantLock lock = new ReentrantLock();
 
     /**
+     * <p>非空条件</p>
      * Condition for blocking when empty.
      */
     private final Condition notEmpty = lock.newCondition();
@@ -283,6 +285,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>扩容</p>
      * Tries to grow array to accommodate at least one more element
      * (but normally expand by about 50%), giving up (allowing retry)
      * on contention (which we expect to be rare). Call only while
@@ -345,6 +348,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>上浮。</p>
      * Inserts item x at position k, maintaining heap invariant by
      * promoting x up the tree until it is greater than or equal to
      * its parent, or is the root.
@@ -475,12 +479,16 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     public boolean offer(E e) {
         if (e == null)
             throw new NullPointerException();
+
         final ReentrantLock lock = this.lock;
         lock.lock();
         int n, cap;
         Object[] es;
+
+        // 扩容
         while ((n = size) >= (cap = (es = queue).length))
             tryGrow(es, cap);
+
         try {
             final Comparator<? super E> cmp;
             if ((cmp = comparator) == null)
@@ -488,6 +496,8 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
             else
                 siftUpUsingComparator(n, e, es, cmp);
             size = n + 1;
+
+            // 满足非空条件
             notEmpty.signal();
         } finally {
             lock.unlock();
@@ -496,6 +506,8 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>插入元素。</p>
+     * <p>因为集合无界，所以永远不会阻塞。</p>
      * Inserts the specified element into this priority queue.
      * As the queue is unbounded, this method will never block.
      *
@@ -543,6 +555,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         lock.lockInterruptibly();
         E result;
         try {
+            // 等待非空条件
             while ( (result = dequeue()) == null)
                 notEmpty.await();
         } finally {
@@ -569,7 +582,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            return (E) queue[0];
+            return (E) queue[0]; // 返回数组中第一个元素
         } finally {
             lock.unlock();
         }

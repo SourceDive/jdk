@@ -87,8 +87,8 @@ public class LongAdder extends Striped64 implements Serializable {
         Cell[] cs; long b, v; int m; Cell c;
 
         // 无竞争时，只需要使用 base
-        if ((cs = cells) != null
-                || !casBase(b = base, b + x)) // 更新失败，出现竞争
+        if ((cs = cells) != null // cells不为null
+                || !casBase(b = base, b + x)) // 如果cells为null, 则对base进行累加，更新失败，出现竞争
         {
             boolean uncontended = true;
             if (cs == null // cells 还没初始化
