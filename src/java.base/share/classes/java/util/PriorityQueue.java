@@ -30,6 +30,8 @@ import java.util.function.Predicate;
 import jdk.internal.access.SharedSecrets;
 
 /**
+ * <p>优先级队列</p>
+ * <p>其实是个最小堆。</p>
  * An unbounded priority {@linkplain Queue queue} based on a priority heap.
  * The elements of the priority queue are ordered according to their
  * {@linkplain Comparable natural ordering}, or by a {@link Comparator}
@@ -753,6 +755,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>建堆。</p>
      * Establishes the heap invariant (described above) in the entire tree,
      * assuming nothing about the order of the elements prior to the call.
      * This classic algorithm due to Floyd (1964) is known to be O(size).
