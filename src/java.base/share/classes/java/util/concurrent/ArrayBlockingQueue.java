@@ -103,13 +103,13 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     /** The queued items */
     final Object[] items;
 
-    /** items index for next take, poll, peek or remove */
+    /** 消费位置 items index for next take, poll, peek or remove */
     int takeIndex;
 
-    /** items index for next put, offer, or add */
+    /** 生产位置 items index for next put, offer, or add */
     int putIndex;
 
-    /** Number of elements in the queue */
+    /** 队列中元素数量 Number of elements in the queue */
     int count;
 
     /*
@@ -181,7 +181,10 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         // assert items[putIndex] == null;
         final Object[] items = this.items;
         items[putIndex] = e;
+
+        // 队列已满，重置放入的下标
         if (++putIndex == items.length) putIndex = 0;
+
         count++;
         notEmpty.signal(); // 非空条件满足
     }
@@ -199,10 +202,14 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         @SuppressWarnings("unchecked")
         E e = (E) items[takeIndex];
         items[takeIndex] = null;
+
+        // 队列消费完毕，重置消费下标
         if (++takeIndex == items.length) takeIndex = 0;
+
         count--;
         if (itrs != null)
             itrs.elementDequeued();
+
         notFull.signal(); // 出队成功，满足非满条件。
         return e;
     }
@@ -330,6 +337,8 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * <p>插入元素到队尾。</p>
+     * <p>成功：true, 失败：false</p>
      * Inserts the specified element at the tail of this queue if it is
      * possible to do so immediately without exceeding the queue's capacity,
      * returning {@code true} upon success and {@code false} if this queue
@@ -343,8 +352,10 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 队列已满。
             if (count == items.length)
                 return false;
+            // 入队
             else {
                 enqueue(e);
                 return true;
@@ -365,10 +376,12 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         Objects.requireNonNull(e);
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
+
         try {
             while (count == items.length)
                 notFull.await(); // 当前队列已满，等待非满条件。
             enqueue(e);
+
         } finally {
             lock.unlock();
         }
@@ -386,9 +399,12 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         throws InterruptedException {
 
         Objects.requireNonNull(e);
+
         long nanos = unit.toNanos(timeout);
+
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
+
         try {
             // 当前队列已满，等待非满条件。
             while (count == items.length) {
@@ -515,14 +531,17 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      */
     public boolean remove(Object o) {
         if (o == null) return false;
+
         final ReentrantLock lock = this.lock;
         lock.lock();
+
         try {
             if (count > 0) {
                 final Object[] items = this.items;
-                for (int i = takeIndex, end = putIndex,
-                         to = (i < end) ? end : items.length;
-                     ; i = 0, to = end) {
+                for (int i = takeIndex, end = putIndex, to = (i < end) ? end : items.length;
+                        ;
+                     i = 0, to = end)
+                {
                     for (; i < to; i++)
                         if (o.equals(items[i])) {
                             removeAt(i);

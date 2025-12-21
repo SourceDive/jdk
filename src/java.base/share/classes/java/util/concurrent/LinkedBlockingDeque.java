@@ -237,6 +237,7 @@ public class LinkedBlockingDeque<E>
         else
             l.next = node;
         ++count;
+
         notEmpty.signal(); // 添加元素后，满足非空条件。
         return true;
     }
@@ -348,7 +349,9 @@ public class LinkedBlockingDeque<E>
      */
     public boolean offerLast(E e) {
         if (e == null) throw new NullPointerException();
+
         Node<E> node = new Node<E>(e);
+
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
