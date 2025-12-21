@@ -190,7 +190,7 @@ public class LinkedHashMap<K,V>
      * HashMap.Node subclass for normal LinkedHashMap entries.
      */
     static class Entry<K,V> extends HashMap.Node<K,V> {
-        Entry<K,V> before, after;
+        Entry<K,V> before, after; // 维护双向链表
         Entry(int hash, K key, V value, Node<K,V> next) {
             super(hash, key, value, next);
         }
@@ -199,16 +199,20 @@ public class LinkedHashMap<K,V>
     private static final long serialVersionUID = 3801124242820219131L;
 
     /**
+     * <p>链表头结点</p>
      * The head (eldest) of the doubly linked list.
      */
     transient LinkedHashMap.Entry<K,V> head;
 
     /**
+     * <p>链表尾结点</p>
      * The tail (youngest) of the doubly linked list.
      */
     transient LinkedHashMap.Entry<K,V> tail;
 
     /**
+     * <p>默认访问顺序</p>
+     * <p>false: 插入顺序</p>
      * The iteration ordering method for this linked hash map: {@code true}
      * for access-order, {@code false} for insertion-order.
      *
@@ -218,13 +222,14 @@ public class LinkedHashMap<K,V>
 
     // internal utilities
 
-    // link at the end of list
+    // 添加到队尾 link at the end of list
     private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
         LinkedHashMap.Entry<K,V> last = tail;
         tail = p;
         if (last == null)
             head = p;
         else {
+            // 图示：last -> p
             p.before = last;
             last.after = p;
         }
@@ -296,7 +301,9 @@ public class LinkedHashMap<K,V>
 
     void afterNodeInsertion(boolean evict) { // possibly remove eldest
         LinkedHashMap.Entry<K,V> first;
-        if (evict && (first = head) != null && removeEldestEntry(first)) {
+        if (evict  // 移除最老的结点
+                && (first = head) != null  // 队头不为空
+                && removeEldestEntry(first)) { // 移除队头
             K key = first.key;
             removeNode(hash(key), key, null, false, true);
         }
@@ -304,9 +311,10 @@ public class LinkedHashMap<K,V>
 
     void afterNodeAccess(Node<K,V> e) { // move node to last
         LinkedHashMap.Entry<K,V> last;
-        if (accessOrder && (last = tail) != e) {
-            LinkedHashMap.Entry<K,V> p =
-                (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
+        if (accessOrder  // 按访问顺序
+                && (last = tail) != e) // 给定结点非队尾
+        {
+            LinkedHashMap.Entry<K,V> p = (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
             p.after = null;
             if (b == null)
                 head = a;
@@ -319,9 +327,12 @@ public class LinkedHashMap<K,V>
             if (last == null)
                 head = p;
             else {
+                // 图示：last -> p(p移动到链表尾部)
                 p.before = last;
                 last.after = p;
             }
+
+            // 更新当前链表尾部
             tail = p;
             ++modCount;
         }
@@ -437,10 +448,14 @@ public class LinkedHashMap<K,V>
      */
     public V get(Object key) {
         Node<K,V> e;
+        // 没找到
         if ((e = getNode(hash(key), key)) == null)
             return null;
+
         if (accessOrder)
             afterNodeAccess(e);
+
+        // 找到返回
         return e.value;
     }
 

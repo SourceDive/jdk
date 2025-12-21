@@ -557,6 +557,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
+     * <p>根据给定的hash和key找到对应的结点。</p>
      * Implements Map.get and related methods.
      *
      * @param hash hash for key
@@ -1870,9 +1871,12 @@ public class HashMap<K,V> extends AbstractMap<K,V>
         size = 0;
     }
 
-    // Callbacks to allow LinkedHashMap post-actions
+    // 回调函数 Callbacks to allow LinkedHashMap post-actions
+    // 访问结点后
     void afterNodeAccess(Node<K,V> p) { }
+    // 插入结点后
     void afterNodeInsertion(boolean evict) { }
+    // 删除结点后
     void afterNodeRemoval(Node<K,V> p) { }
 
     // Called only from writeObject, to ensure compatible ordering.
