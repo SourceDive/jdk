@@ -510,6 +510,7 @@ public abstract class AbstractQueuedSynchronizer
         }
 
         /**
+         * <p>获取前置结点。</p>
          * Returns previous node, or throws NullPointerException if null.
          * Use when predecessor cannot be null.  The null check could
          * be elided, but is present to help the VM.
@@ -524,7 +525,7 @@ public abstract class AbstractQueuedSynchronizer
                 return p;
         }
 
-        /** Establishes initial head or SHARED marker. */
+        /** 占位符(dummyHead) Establishes initial head or SHARED marker. */
         Node() {}
 
         /** Constructor used by addWaiter. */
@@ -572,20 +573,20 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>等待队列头部</p>
+     * <p>队头</p>
      * Head of the wait queue, lazily initialized.  Except for
      * initialization, it is modified only via method setHead.  Note:
      * If head exists, its waitStatus is guaranteed not to be
      * CANCELLED.
      */
-    private transient volatile Node head;
+    private transient volatile Node head; // 为null代表队列为空
 
     /**
-     * <p>等待队列尾部</p>
+     * <p>队尾</p>
      * Tail of the wait queue, lazily initialized.  Modified only via
      * method enq to add new wait node.
      */
-    private transient volatile Node tail;
+    private transient volatile Node tail; // 为null代表队列为空
 
     /**
      * <p>同步状态</p>
@@ -647,16 +648,17 @@ public abstract class AbstractQueuedSynchronizer
      * @return node's predecessor
      */
     private Node enq(Node node) {
-        for (;;) {
+        for (;;) { // 无限循环
             Node oldTail = tail;
             if (oldTail != null) {
                 node.setPrevRelaxed(oldTail);
-                if (compareAndSetTail(oldTail, node)) {
+
+                if (compareAndSetTail(oldTail, node)) { // CAS 失败，则不断重试
                     oldTail.next = node;
                     return oldTail;
                 }
             } else {
-                // 初始化同步队列。
+                // 队尾不存在(队列为空)，则初始化同步队列。
                 initializeSyncQueue();
             }
         }
@@ -671,11 +673,11 @@ public abstract class AbstractQueuedSynchronizer
     private Node addWaiter(Node mode) {
         Node node = new Node(mode);
 
-        for (;;) {
+        for (;;) { // 无限循环
             Node oldTail = tail;
             if (oldTail != null) {
                 node.setPrevRelaxed(oldTail);
-                if (compareAndSetTail(oldTail, node)) {
+                if (compareAndSetTail(oldTail, node)) { // CAS 失败，不断重试
                     oldTail.next = node;
                     return node;
                 }
@@ -1021,7 +1023,9 @@ public abstract class AbstractQueuedSynchronizer
         boolean interrupted = false;
         try {
             for (;;) {
+                // 前置结点
                 final Node p = node.predecessor();
+
                 if (p == head) {
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {
@@ -1440,9 +1444,11 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if there may be other threads waiting to acquire
      */
     public final boolean hasQueuedThreads() {
+        // 从后向前遍历
         for (Node p = tail, h = head; p != h && p != null; p = p.prev)
             if (p.waitStatus <= 0)
                 return true;
+
         return false;
     }
 
@@ -1462,6 +1468,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
+     * <p>获取队列中第一个排队的线程（等待时间最长的）</p>
      * Returns the first (longest-waiting) thread in the queue, or
      * {@code null} if no threads are currently queued.
      *
@@ -1474,7 +1481,8 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final Thread getFirstQueuedThread() {
         // handle only fast path, else relay
-        return (head == tail) ? null : fullGetFirstQueuedThread();
+        return (head == tail) ? null /*队列为空*/
+                : fullGetFirstQueuedThread();
     }
 
     /**
@@ -1515,7 +1523,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>给定线程是否在队列中。</p>
+     * <p>检查给定线程是否在排队。</p>
      * <p>实现：直接去遍历队列元素后对比。</p>
      * Returns true if the given thread is currently queued.
      *
@@ -1529,9 +1537,12 @@ public abstract class AbstractQueuedSynchronizer
     public final boolean isQueued(Thread thread) {
         if (thread == null)
             throw new NullPointerException();
+
+        // 从后往前遍历队列
         for (Node p = tail; p != null; p = p.prev)
             if (p.thread == thread)
                 return true;
+
         return false;
     }
 
@@ -1553,7 +1564,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>查看等待队列是否已有等待的线程。</p>
+     * <p>查看队列是否存在比当前线程等待更久的线程。</p>
      * Queries whether any threads have been waiting to acquire longer
      * than the current thread.
      *
@@ -1598,17 +1609,23 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final boolean hasQueuedPredecessors() {
         Node h, s;
+        // 队头存在
         if ((h = head) != null) {
-            if ((s = h.next) == null || s.waitStatus > 0) {
+            if ((s = h.next) == null // 队头下一个结点不存在
+                    || s.waitStatus > 0)  // 或者下一个结点存在且线程取消了
+            {
                 s = null; // traverse in case of concurrent cancellation
                 for (Node p = tail; p != h && p != null; p = p.prev) {
                     if (p.waitStatus <= 0)
                         s = p;
                 }
             }
+
             if (s != null && s.thread != Thread.currentThread())
                 return true;
         }
+
+        // head == null 直接返回
         return false;
     }
 
@@ -1648,6 +1665,8 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final Collection<Thread> getQueuedThreads() {
         ArrayList<Thread> list = new ArrayList<>();
+
+        // 遍历获取所有。
         for (Node p = tail; p != null; p = p.prev) {
             Thread t = p.thread;
             if (t != null)
@@ -1918,9 +1937,9 @@ public abstract class AbstractQueuedSynchronizer
      */
     public class ConditionObject implements Condition, java.io.Serializable {
         private static final long serialVersionUID = 1173984872572414699L;
-        /** First node of condition queue. */
+        /** 队头 First node of condition queue. */
         private transient Node firstWaiter;
-        /** Last node of condition queue. */
+        /** 队尾 Last node of condition queue. */
         private transient Node lastWaiter;
 
         /**
@@ -2028,9 +2047,14 @@ public abstract class AbstractQueuedSynchronizer
          *         returns {@code false}
          */
         public final void signal() {
+            // 未持有锁,报错
             if (!isHeldExclusively())
                 throw new IllegalMonitorStateException();
+
+            // 获取队头
             Node first = firstWaiter;
+
+            // 唤醒队头
             if (first != null)
                 doSignal(first);
         }
@@ -2373,12 +2397,13 @@ public abstract class AbstractQueuedSynchronizer
      */
     private final void initializeSyncQueue() {
         Node h;
+        // head = tail = new Node()
         if (HEAD.compareAndSet(this, null, (h = new Node())))
             tail = h;
     }
 
     /**
-     * <p>设置队列尾结点。</p>
+     * <p>设置队尾结点。</p>
      * CASes tail field.
      */
     private final boolean compareAndSetTail(Node expect, Node update) {

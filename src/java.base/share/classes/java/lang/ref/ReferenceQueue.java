@@ -69,6 +69,7 @@ public class ReferenceQueue<T> {
             if ((queue == NULL) || (queue == ENQUEUED)) {
                 return false;
             }
+
             assert queue == this;
             // Self-loop end, so if a FinalReference it remains inactive.
             r.next = (head == null) ? r : head;
