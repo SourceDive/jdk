@@ -573,7 +573,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * <p>队头</p>
+     * <p>队头指针</p>
      * Head of the wait queue, lazily initialized.  Except for
      * initialization, it is modified only via method setHead.  Note:
      * If head exists, its waitStatus is guaranteed not to be
@@ -582,7 +582,7 @@ public abstract class AbstractQueuedSynchronizer
     private transient volatile Node head; // 为null代表队列为空
 
     /**
-     * <p>队尾</p>
+     * <p>队尾指针</p>
      * Tail of the wait queue, lazily initialized.  Modified only via
      * method enq to add new wait node.
      */
@@ -650,11 +650,14 @@ public abstract class AbstractQueuedSynchronizer
     private Node enq(Node node) {
         for (;;) { // 无限循环
             Node oldTail = tail;
+
+            // 队列不为空
             if (oldTail != null) {
+                // 设置 node 前置为旧队尾
                 node.setPrevRelaxed(oldTail);
 
                 if (compareAndSetTail(oldTail, node)) { // CAS 失败，则不断重试
-                    oldTail.next = node;
+                    oldTail.next = node; // 图示：tail -> node
                     return oldTail;
                 }
             } else {
@@ -933,13 +936,17 @@ public abstract class AbstractQueuedSynchronizer
     final boolean acquireQueued(final Node node, int arg) {
         boolean interrupted = false;
         try {
-            for (;;) {
+            for (;;) { // 无限循环
+                // 获取前置结点
                 final Node p = node.predecessor();
-                if (p == head && tryAcquire(arg)) {
+
+                if (p == head  // 如果前置结点为队头
+                        && tryAcquire(arg)) {
                     setHead(node);
                     p.next = null; // help GC
                     return interrupted;
                 }
+
                 if (shouldParkAfterFailedAcquire(p, node))
                     interrupted |= parkAndCheckInterrupt();
             }
@@ -1022,10 +1029,11 @@ public abstract class AbstractQueuedSynchronizer
         final Node node = addWaiter(Node.SHARED);
         boolean interrupted = false;
         try {
-            for (;;) {
-                // 前置结点
+            for (;;) { // 无限循环
+                // 获取前置结点
                 final Node p = node.predecessor();
 
+                // 前置结点为队头
                 if (p == head) {
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {

@@ -1077,7 +1077,7 @@ public final class Integer extends Number
      *
      * @serial
      */
-    private final int value;
+    private final int value; // final保证不可变。
 
     /**
      * Constructs a newly allocated {@code Integer} object that

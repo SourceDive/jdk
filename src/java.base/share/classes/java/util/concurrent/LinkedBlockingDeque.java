@@ -209,6 +209,7 @@ public class LinkedBlockingDeque<E>
         // assert lock.isHeldByCurrentThread();
         if (count >= capacity)
             return false;
+
         Node<E> f = first;
         node.next = f;
         first = node;
@@ -334,7 +335,10 @@ public class LinkedBlockingDeque<E>
      */
     public boolean offerFirst(E e) {
         if (e == null) throw new NullPointerException();
+
+        // 包装
         Node<E> node = new Node<E>(e);
+
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
