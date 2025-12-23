@@ -39,6 +39,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * <p>同步屏障(可循环使用)</p>
  * A synchronization aid that allows a set of threads to all wait for
  * each other to reach a common barrier point.  CyclicBarriers are
  * useful in programs involving a fixed sized party of threads that
@@ -201,6 +202,7 @@ public class CyclicBarrier {
                TimeoutException {
         final ReentrantLock lock = this.lock;
         lock.lock();
+
         try {
             final Generation g = generation;
 

@@ -49,6 +49,9 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * <p>同步队列</p>
+ * <p>一个put必须等待一个take</p>
+ * <p>传球手，没有存储元素的地方。</p>
  * A {@linkplain BlockingQueue blocking queue} in which each insert
  * operation must wait for a corresponding remove operation by another
  * thread, and vice versa.  A synchronous queue does not have any
@@ -664,7 +667,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
             QNode s = null; // constructed/reused as needed
             boolean isData = (e != null);
 
-            for (;;) {
+            for (;;) { // 无限循环
                 QNode t = tail;
                 QNode h = head;
                 if (t == null || h == null)         // saw uninitialized value
@@ -869,7 +872,9 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException {@inheritDoc}
      */
     public void put(E e) throws InterruptedException {
+        // 检查非null
         if (e == null) throw new NullPointerException();
+
         if (transferer.transfer(e, false, 0) == null) {
             Thread.interrupted();
             throw new InterruptedException();

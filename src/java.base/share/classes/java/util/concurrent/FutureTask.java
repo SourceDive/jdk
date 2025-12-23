@@ -191,8 +191,10 @@ public class FutureTask<V> implements RunnableFuture<V> {
      */
     public V get() throws InterruptedException, ExecutionException {
         int s = state;
+
         if (s <= COMPLETING)
             s = awaitDone(false, 0L);
+
         return report(s);
     }
 
