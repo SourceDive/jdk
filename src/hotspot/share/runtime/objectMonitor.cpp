@@ -1246,6 +1246,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   intptr_t save = _recursions; // record the old recursion count
   _waiters++;                  // increment the number of waiters 增加等待线程数量
   _recursions = 0;             // set the recursion level to be 1
+
+  // 解锁(释放monitor)
   exit(true, Self);                    // exit the monitor
   guarantee(_owner != Self, "invariant");
 

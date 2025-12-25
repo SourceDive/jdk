@@ -250,6 +250,7 @@ public interface CompletionStage<T> {
     public CompletionStage<Void> thenAcceptAsync(Consumer<? super T> action,
                                                  Executor executor);
     /**
+     * <p>当原阶段执行正常，就执行给定的 action。</p>
      * Returns a new CompletionStage that, when this stage completes
      * normally, executes the given action.
      *

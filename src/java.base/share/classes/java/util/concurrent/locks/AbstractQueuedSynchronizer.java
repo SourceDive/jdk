@@ -400,13 +400,13 @@ public abstract class AbstractQueuedSynchronizer
      */
     static final class Node {
         /** Marker to indicate a node is waiting in shared mode */
-        static final Node SHARED = new Node(); // 共享模式: 多个线程可以同时成功。
+        static final Node SHARED = new Node(); // 标识结点处于共享模式: 多个线程可以同时成功。
         /** Marker to indicate a node is waiting in exclusive mode */
-        static final Node EXCLUSIVE = null; // 独占模式: 同一时间只能有一个线程成功。
+        static final Node EXCLUSIVE = null; // 标识结点处于独占模式: 同一时间只能有一个线程成功。
 
         /// waitStatus 枚举值
         /** waitStatus value to indicate thread has cancelled. */
-        static final int CANCELLED =  1; // 线程已被取消
+        static final int CANCELLED =  1; // 线程取消获取锁
         /** waitStatus value to indicate successor's thread needs unparking. */
         static final int SIGNAL    = -1; // 后继节点需要被唤醒
         /** waitStatus value to indicate thread is waiting on condition. */
@@ -454,7 +454,7 @@ public abstract class AbstractQueuedSynchronizer
         volatile int waitStatus;
 
         /**
-         * <p>当前结点的上一个结点</p>
+         * <p>当前结点的前置结点</p>
          * Link to predecessor node that current node/thread relies on
          * for checking waitStatus. Assigned during enqueuing, and nulled
          * out (for sake of GC) only upon dequeuing.  Also, upon
@@ -468,7 +468,7 @@ public abstract class AbstractQueuedSynchronizer
         volatile Node prev;
 
         /**
-         * <p>当前结点的下一个结点</p>
+         * <p>当前结点的后置结点</p>
          * Link to the successor node that the current node/thread
          * unparks upon release. Assigned during enqueuing, adjusted
          * when bypassing cancelled predecessors, and nulled out (for
@@ -574,6 +574,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * <p>队头指针</p>
+     * <p>当前持有锁的线程</p>
      * Head of the wait queue, lazily initialized.  Except for
      * initialization, it is modified only via method setHead.  Note:
      * If head exists, its waitStatus is guaranteed not to be
