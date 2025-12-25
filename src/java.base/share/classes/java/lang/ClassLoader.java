@@ -586,6 +586,7 @@ public abstract class ClassLoader {
                     // from the non-null parent class loader
                 }
 
+                // 父类加载器加载不到，才会尝试自己加载。
                 if (c == null) {
                     // If still not found, then invoke findClass in order
                     // to find the class.
