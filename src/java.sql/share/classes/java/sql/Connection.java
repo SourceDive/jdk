@@ -29,6 +29,7 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 
 /**
+ * <p>connection 对应实际的物理连接。</p>
  * <P>A connection (session) with a specific
  * database. SQL statements are executed and results are returned
  * within the context of a connection.

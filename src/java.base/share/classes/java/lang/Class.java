@@ -899,6 +899,7 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
+     * <p>返回父类。</p>
      * Returns the {@code Class} representing the direct superclass of the
      * entity (class, interface, primitive type or void) represented by
      * this {@code Class}.  If this {@code Class} represents either the
@@ -1027,6 +1028,7 @@ public final class Class<T> implements java.io.Serializable,
     private transient String packageName;
 
     /**
+     * <p>返回实现的接口列表。</p>
      * Returns the interfaces directly implemented by the class or interface
      * represented by this object.
      *

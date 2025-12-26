@@ -58,6 +58,7 @@ import jdk.internal.reflect.Reflection;
 
 /**
  * <p>SPI功能。</p>
+ * <p>存储于目录：META-INF/services</p>
  * A facility to load implementations of a service.
  *
  * <p> A <i>service</i> is a well-known interface or class for which zero, one,
@@ -373,7 +374,7 @@ import jdk.internal.reflect.Reflection;
  *
  * <h3> Concurrency </h3>
  *
- * <p> Instances of this class are not safe for use by multiple concurrent
+ * <p> Instances of this class are not safe for use by multiple concurrent 非线程安全
  * threads.
  *
  * <h3> Null handling </h3>
@@ -1539,6 +1540,7 @@ public final class ServiceLoader<S>
     }
 
     /**
+     * <p>为接口寻找服务实现。</p>
      * Creates a new service loader for the given service. The service loader
      * uses the given class loader as the starting point to locate service
      * providers for the service. The service loader's {@link #iterator()
@@ -1649,6 +1651,7 @@ public final class ServiceLoader<S>
     }
 
     /**
+     * <p>为接口寻找服务实现。</p>
      * Creates a new service loader for the given service type, using the
      * current thread's {@linkplain java.lang.Thread#getContextClassLoader
      * context class loader}.
@@ -1676,6 +1679,7 @@ public final class ServiceLoader<S>
      *
      * @param  service
      *         The interface or abstract class representing the service
+     *         代表服务的接口或抽象类
      *
      * @return A new service loader
      *

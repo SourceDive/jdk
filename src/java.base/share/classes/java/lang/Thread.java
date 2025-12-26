@@ -1490,6 +1490,7 @@ class Thread implements Runnable {
     }
 
     /**
+     * <p>获取线程的类加载器。</p>
      * Returns the context {@code ClassLoader} for this thread. The context
      * {@code ClassLoader} is provided by the creator of the thread for use
      * by code running in this thread when loading classes and resources.
