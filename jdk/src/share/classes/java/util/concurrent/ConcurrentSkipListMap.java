@@ -818,8 +818,9 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         Node<K,V> z;             // added node
         if (key == null)
             throw new NullPointerException();
+
         Comparator<? super K> cmp = comparator;
-        outer: for (;;) {
+        outer: for (;;) { // 无限循环
             for (Node<K,V> b = findPredecessor(key, cmp), n = b.next;;) {
                 if (n != null) {
                     Object v; int c;
@@ -1578,6 +1579,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     public V put(K key, V value) {
         if (value == null)
             throw new NullPointerException();
+
         return doPut(key, value, false);
     }
 
