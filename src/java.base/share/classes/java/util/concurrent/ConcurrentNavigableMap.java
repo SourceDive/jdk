@@ -39,6 +39,7 @@ import java.util.NavigableMap;
 import java.util.NavigableSet;
 
 /**
+ * <p>并发可导航map.</p>
  * A {@link ConcurrentMap} supporting {@link NavigableMap} operations,
  * and recursively so for its navigable sub-maps.
  *

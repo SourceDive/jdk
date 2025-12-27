@@ -26,6 +26,7 @@
 package java.util;
 
 /**
+ * <p>有序map.</p>
  * A {@link Map} that further provides a <em>total ordering</em> on its keys.
  * The map is ordered according to the {@linkplain Comparable natural
  * ordering} of its keys, or by a {@link Comparator} typically

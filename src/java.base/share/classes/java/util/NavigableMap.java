@@ -36,6 +36,7 @@
 package java.util;
 
 /**
+ * <p>可导航map.</p>
  * A {@link SortedMap} extended with navigation methods returning the
  * closest matches for given search targets. Methods
  * {@link #lowerEntry}, {@link #floorEntry}, {@link #ceilingEntry},
@@ -111,6 +112,7 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
     Map.Entry<K,V> lowerEntry(K key);
 
     /**
+     * <p>返回小于给定key的最大key。</p>
      * Returns the greatest key strictly less than the given key, or
      * {@code null} if there is no such key.
      *
@@ -212,6 +214,7 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
     K higherKey(K key);
 
     /**
+     * <p>返回map中和最小键关联的键值对。</p>
      * Returns a key-value mapping associated with the least
      * key in this map, or {@code null} if the map is empty.
      *
@@ -221,6 +224,7 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
     Map.Entry<K,V> firstEntry();
 
     /**
+     * <p>返回map中和最大键关键的键值对</p>
      * Returns a key-value mapping associated with the greatest
      * key in this map, or {@code null} if the map is empty.
      *
@@ -248,6 +252,7 @@ public interface NavigableMap<K,V> extends SortedMap<K,V> {
     Map.Entry<K,V> pollLastEntry();
 
     /**
+     * <p>获取倒序视图。</p>
      * Returns a reverse order view of the mappings contained in this map.
      * The descending map is backed by this map, so changes to the map are
      * reflected in the descending map, and vice-versa.  If either map is

@@ -426,6 +426,9 @@ public final class System {
     public static native long currentTimeMillis();
 
     /**
+     * <p>纳秒级别精度。</p>
+     * <p>1s = 10^9 纳秒</p>
+     * <p>注意和当前时间没关系，适合于计算运行间隔。</p>
      * Returns the current value of the running Java Virtual Machine's
      * high-resolution time source, in nanoseconds.
      *

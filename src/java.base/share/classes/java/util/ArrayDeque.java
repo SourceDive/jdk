@@ -301,6 +301,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     public void addLast(E e) {
         if (e == null)
             throw new NullPointerException();
+
         final Object[] es = elements;
         es[tail] = e;
         if (head == (tail = inc(tail, es.length)))
