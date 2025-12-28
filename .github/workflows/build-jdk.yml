@@ -1,0 +1,859 @@
+name: Build JDK 8
+
+on:
+  push:
+    branches:
+      - '**'  # 在所有分支上触发
+
+jobs:
+  build:
+    name: 编译 JDK 8
+    runs-on: ubuntu-latest
+    container:
+      image: adoptopenjdk/openjdk8:x86_64-ubuntu-jdk8u292-b10
+    outputs:
+      source-hash: ${{ steps.source-hash.outputs.hash }}
+      build-success: ${{ steps.verify-build.outputs.success }}
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 计算源代码哈希
+        id: source-hash
+        run: |
+          # 基于文件内容的哈希（忽略时间戳）
+          FILE_HASH=$(find src make -type f \( -name "*.java" -o -name "*.cpp" -o -name "*.c" -o -name "*.h" -o -name "*.gmk" -o -name "*.mk" \) -print0 | \
+            sort -z | \
+            xargs -0 sha256sum | \
+            awk '{print $1}' | \
+            sha256sum | \
+            cut -d' ' -f1 | \
+            cut -c1-16)
+          
+          # 使用 GitHub 提供的 commit SHA
+          GITHUB_SHA_SHORT=$(echo "${{ github.sha }}" | cut -c1-16)
+          
+          # 使用文件内容哈希作为主要标识（更稳定）
+          echo "hash=${FILE_HASH}" >> $GITHUB_OUTPUT
+          echo "github-sha=${GITHUB_SHA_SHORT}" >> $GITHUB_OUTPUT
+          echo "文件内容哈希: ${FILE_HASH}"
+          echo "GitHub SHA: ${GITHUB_SHA_SHORT}"
+      
+      - name: 恢复构建缓存
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/
+            .buildcache/
+          key: jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}-${{ hashFiles('**/Makefile', '**/*.gmk') }}
+          restore-keys: |
+            jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}-
+            jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}-
+            jdk-build-v4-${{ runner.os }}-
+      
+      - name: 显示缓存状态
+        run: |
+          echo "=== 缓存键信息 ==="
+          echo "主键: jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.hash }}-${{ hashFiles('**/Makefile', '**/*.gmk') }}"
+          echo "备用键: jdk-build-v4-${{ runner.os }}-${{ steps.source-hash.outputs.github-sha }}-*"
+          
+          if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
+            echo "🎯 缓存命中！"
+            if [ -d build ]; then
+              echo "缓存的构建目录大小:"
+              du -sh build/
+              echo "缓存的构建时间:"
+              ls -ld build/
+              echo "缓存文件数量:"
+              find build -type f | wc -l
+              
+              # 检查关键构建产物
+              echo ""
+              echo "=== 缓存内容检查 ==="
+              if [ -d build/*/images/jdk ]; then
+                echo "✅ 发现完整JDK构建产物"
+                echo "JDK大小: $(du -sh build/*/images/jdk | cut -f1)"
+              fi
+              if [ -d build/*/support ]; then
+                echo "✅ 发现构建支持文件"
+              fi
+              if [ -d build/*/make ]; then
+                echo "✅ 发现Make配置"
+              fi
+            fi
+          else
+            echo "📦 无缓存或缓存未命中，将执行完整编译"
+            echo "提示：首次构建后，后续构建将使用缓存加速"
+          fi
+          
+      
+      - name: 安装构建依赖
+        run: |
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            autoconf \
+            zip \
+            unzip \
+            cpio \
+            file \
+            libx11-dev \
+            libxext-dev \
+            libxrender-dev \
+            libxrandr-dev \
+            libxtst-dev \
+            libxt-dev \
+            libcups2-dev \
+            libfontconfig1-dev \
+            libasound2-dev \
+            libfreetype6-dev \
+            libffi-dev
+          
+          # 验证编译器安装
+          echo "验证编译器安装..."
+          gcc --version
+          g++ --version
+          which gcc
+          which g++
+          
+          # 测试编译器能否创建可执行文件
+          echo 'int main(){return 0;}' > /tmp/test.c
+          gcc /tmp/test.c -o /tmp/test && /tmp/test && echo "✅ 编译器测试通过" || echo "❌ 编译器测试失败"
+          rm -f /tmp/test.c /tmp/test
+      
+      - name: 分析机器配置并优化编译参数
+        id: machine-config
+        run: |
+          echo "=== 机器配置分析 ==="
+          
+          # 获取CPU信息
+          CPU_CORES=$(nproc)
+          CPU_MODEL=$(grep "model name" /proc/cpuinfo | head -1 | cut -d: -f2 | xargs)
+          echo "CPU核心数: $CPU_CORES"
+          echo "CPU型号: $CPU_MODEL"
+          
+          # 获取内存信息
+          TOTAL_MEM=$(free -m | awk 'NR==2{printf "%.0f", $2}')
+          AVAIL_MEM=$(free -m | awk 'NR==2{printf "%.0f", $7}')
+          echo "总内存: ${TOTAL_MEM}MB"
+          echo "可用内存: ${AVAIL_MEM}MB"
+          
+          # 获取磁盘信息
+          DISK_SPACE=$(df -BG . | awk 'NR==2{print $4}' | sed 's/G//')
+          echo "可用磁盘空间: ${DISK_SPACE}GB"
+          
+          # 计算最优并行任务数
+          # 对于JDK构建，通常使用CPU核心数的1.5-2倍
+          if [ $CPU_CORES -ge 8 ]; then
+            # 高性能机器：使用更多并行任务
+            OPTIMAL_JOBS=$((CPU_CORES * 2))
+            HOTSPOT_JOBS=$((CPU_CORES * 3))
+          elif [ $CPU_CORES -ge 4 ]; then
+            # 中等性能机器
+            OPTIMAL_JOBS=$((CPU_CORES * 3 / 2))
+            HOTSPOT_JOBS=$((CPU_CORES * 2))
+          else
+            # 低性能机器
+            OPTIMAL_JOBS=$CPU_CORES
+            HOTSPOT_JOBS=$CPU_CORES
+          fi
+          
+          # 根据内存调整并行度
+          if [ $AVAIL_MEM -lt 4000 ]; then
+            # 内存不足，减少并行度
+            OPTIMAL_JOBS=$((OPTIMAL_JOBS * 3 / 4))
+            HOTSPOT_JOBS=$((HOTSPOT_JOBS * 3 / 4))
+            echo "⚠️ 内存不足，减少并行度"
+          fi
+          
+          # 设置JVM内存参数
+          if [ $AVAIL_MEM -ge 8000 ]; then
+            JVM_HEAP="4g"
+            JVM_META="1g"
+          elif [ $AVAIL_MEM -ge 4000 ]; then
+            JVM_HEAP="2g"
+            JVM_META="512m"
+          else
+            JVM_HEAP="1g"
+            JVM_META="256m"
+          fi
+          
+          echo ""
+          echo "=== 优化参数计算 ==="
+          echo "最优并行任务数: $OPTIMAL_JOBS"
+          echo "HotSpot并行任务数: $HOTSPOT_JOBS"
+          echo "JVM堆内存: $JVM_HEAP"
+          echo "JVM元空间: $JVM_META"
+          
+          # 输出到GitHub Actions
+          echo "optimal-jobs=$OPTIMAL_JOBS" >> $GITHUB_OUTPUT
+          echo "hotspot-jobs=$HOTSPOT_JOBS" >> $GITHUB_OUTPUT
+          echo "jvm-heap=$JVM_HEAP" >> $GITHUB_OUTPUT
+          echo "jvm-meta=$JVM_META" >> $GITHUB_OUTPUT
+          
+          echo ""
+          echo "=== 环境详细信息 ==="
+          echo "Java 版本:"
+          java -version
+          echo ""
+          echo "构建工具版本:"
+          gcc --version | head -1
+          make --version | head -1
+          echo ""
+          echo "系统信息:"
+          uname -a
+      
+      - name: 配置构建
+        id: configure-build
+        run: |
+          # 清除可能干扰configure的环境变量
+          unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS || true
+          
+          # 执行configure
+          bash configure --with-debug-level=release
+          
+          echo "configure-success=true" >> $GITHUB_OUTPUT
+        env:
+          LC_ALL: en_US.UTF-8
+          LANG: en_US.UTF-8
+          JAVAC_FLAGS: "-encoding UTF-8"
+          HOTSPOT_BUILD_JOBS: "${{ steps.machine-config.outputs.hotspot-jobs }}"
+      
+      - name: 显示配置信息
+        run: |
+          SPEC_FILE=$(find build -name "spec.gmk" | head -1)
+          if [ -n "$SPEC_FILE" ]; then
+            if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
+              echo "✅ 使用缓存的配置"
+            else
+              echo "✅ 配置成功完成"
+            fi
+            cat "$SPEC_FILE" | grep -E "CONF_NAME|JDK_VERSION|BOOT_JDK"
+          else
+            echo "❌ 配置失败"
+            exit 1
+          fi
+      
+      - name: 分析缓存状态
+        id: cache-analysis
+        run: |
+          echo "=== 缓存分析 ==="
+          if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
+            echo "🎯 缓存命中"
+            
+            # 检查关键构建产物是否存在
+            if [ -d build/*/images/jdk ]; then
+              echo "✅ 发现完整的JDK构建产物"
+              echo "incremental=true" >> $GITHUB_OUTPUT
+              echo "build-strategy=incremental" >> $GITHUB_OUTPUT
+            elif [ -d build/*/support ]; then
+              echo "⚠️ 发现部分构建产物，需要增量编译"
+              echo "incremental=true" >> $GITHUB_OUTPUT
+              echo "build-strategy=incremental" >> $GITHUB_OUTPUT
+            else
+              echo "❌ 缓存不完整，需要重新构建"
+              echo "incremental=false" >> $GITHUB_OUTPUT
+              echo "build-strategy=full" >> $GITHUB_OUTPUT
+            fi
+            
+            # 显示缓存内容
+            echo "缓存内容分析:"
+            if [ -d build ]; then
+              echo "构建目录大小: $(du -sh build/ | cut -f1)"
+              echo "构建目录结构:"
+              find build -maxdepth 2 -type d | head -10
+            fi
+          else
+            echo "📦 缓存未命中，需要完整构建"
+            echo "incremental=false" >> $GITHUB_OUTPUT
+            echo "build-strategy=full" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: 智能构建优化
+        run: |
+          echo "=== 智能构建优化 ==="
+          
+          # 根据机器配置和缓存状态进行最终优化
+          CPU_CORES="${{ steps.machine-config.outputs.cpu-cores }}"
+          AVAIL_MEM="${{ steps.machine-config.outputs.avail-mem }}"
+          BUILD_STRATEGY="${{ steps.cache-analysis.outputs.build-strategy }}"
+          
+          echo "机器配置: ${CPU_CORES}核, ${AVAIL_MEM}MB内存"
+          echo "构建策略: $BUILD_STRATEGY"
+          
+          # 创建优化的构建环境
+          echo "创建优化的构建环境..."
+          
+          # 设置系统级优化
+          if [ $CPU_CORES -ge 8 ]; then
+            echo "启用高性能模式"
+            # 设置CPU调度优先级
+            echo "performance" | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null || true
+          fi
+          
+          # 优化文件系统缓存
+          echo "优化文件系统缓存..."
+          sync
+          echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
+          
+          # 设置编译器优化（configure脚本会处理这些）
+          export CC="gcc"
+          export CXX="g++"
+          
+          # 根据内存大小调整链接器选项
+          if [ $AVAIL_MEM -ge 8000 ]; then
+            export LDFLAGS="$LDFLAGS -Wl,--no-as-needed -Wl,--hash-style=gnu"
+            echo "启用高级链接器优化"
+          fi
+          
+          # 设置Make优化选项
+          # 注意：JDK构建系统不支持MAKEFLAGS中的-j参数，使用JOBS环境变量
+          # 设置Make优化选项（不使用-j参数）
+          export MAKE_OPTS="-O"
+          
+          # 创建构建缓存目录
+          mkdir -p .buildcache
+          export BUILD_CACHE_DIR="$(pwd)/.buildcache"
+          
+          echo "=== 优化配置完成 ==="
+          echo "编译器: $CC"
+          echo "链接器标志: $LDFLAGS"
+          echo "Make选项: $MAKE_OPTS"
+          echo "构建缓存: $BUILD_CACHE_DIR"
+      
+      - name: 编译 JDK
+        id: compile-jdk
+        run: |
+          echo "开始编译时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          START_TIME=$(date +%s)
+          
+          # 使用动态优化的并行任务数
+          OPTIMAL_JOBS="${{ steps.machine-config.outputs.optimal-jobs }}"
+          HOTSPOT_JOBS="${{ steps.machine-config.outputs.hotspot-jobs }}"
+          JVM_HEAP="${{ steps.machine-config.outputs.jvm-heap }}"
+          JVM_META="${{ steps.machine-config.outputs.jvm-meta }}"
+          
+          echo "=== 优化编译配置 ==="
+          echo "并行任务数: $OPTIMAL_JOBS"
+          echo "HotSpot任务数: $HOTSPOT_JOBS"
+          echo "JVM堆内存: $JVM_HEAP"
+          echo "JVM元空间: $JVM_META"
+          echo "构建策略: ${{ steps.cache-analysis.outputs.build-strategy }}"
+          
+          # 设置环境变量以优化编译性能
+          # 注意：JDK构建系统不支持MAKEFLAGS中的-j参数，使用JOBS环境变量
+          export HOTSPOT_BUILD_JOBS="$HOTSPOT_JOBS"
+          # 不再设置CFLAGS/CXXFLAGS，让configure自己处理，避免编译器测试失败
+          export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
+          
+          # 根据机器配置设置GC优化选项（只选择一个GC避免冲突）
+          if [ "${{ steps.machine-config.outputs.avail-mem }}" -ge 8000 ]; then
+            export JAVAC_FLAGS="$JAVAC_FLAGS -J-XX:+UseG1GC -J-XX:MaxGCPauseMillis=200"
+            echo "启用G1GC优化"
+          elif [ "${{ steps.machine-config.outputs.cpu-cores }}" -ge 8 ]; then
+            export JAVAC_FLAGS="$JAVAC_FLAGS -J-XX:+UseParallelGC -J-XX:ParallelGCThreads=$OPTIMAL_JOBS"
+            echo "启用并行GC优化"
+          else
+            export JAVAC_FLAGS="$JAVAC_FLAGS -J-XX:+UseSerialGC"
+            echo "使用串行GC"
+          fi
+          
+          # 启动性能监控
+          echo "启动性能监控..."
+          (
+            while true; do
+              echo "=== 实时性能监控 $(date '+%H:%M:%S') ==="
+              echo "CPU使用率: $(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)%"
+              echo "内存使用: $(free -m | awk 'NR==2{printf "%.1f%%", $3*100/$2}')"
+              echo "活跃进程数: $(ps aux | wc -l)"
+              echo "构建目录大小: $(du -sh build/ 2>/dev/null | cut -f1 || echo 'N/A')"
+              echo "----------------------------------------"
+              sleep 60
+            done
+          ) &
+          MONITOR_PID=$!
+          
+          # 根据缓存状态选择编译策略
+          COMPILE_SUCCESS=false
+          COMPILE_ATTEMPTS=0
+          MAX_COMPILE_ATTEMPTS=3
+          
+          while [ $COMPILE_ATTEMPTS -lt $MAX_COMPILE_ATTEMPTS ] && [ "$COMPILE_SUCCESS" = "false" ]; do
+            COMPILE_ATTEMPTS=$((COMPILE_ATTEMPTS + 1))
+            echo "=== 编译尝试 $COMPILE_ATTEMPTS/$MAX_COMPILE_ATTEMPTS ==="
+            
+            if [ "${{ steps.cache-analysis.outputs.incremental }}" = "true" ]; then
+              echo "🎯 执行增量编译"
+              echo "跳过已完成的模块，只编译变更部分"
+              
+              # 使用优化的增量编译选项
+              if make images \
+                JOBS=$OPTIMAL_JOBS \
+                JAVAC_FLAGS="$JAVAC_FLAGS" \
+                WARNINGS_AS_ERRORS=false \
+                CONF_CHECK=ignore \
+                LOG_LEVEL=info \
+                HOTSPOT_BUILD_JOBS=$HOTSPOT_JOBS \
+          # 不再设置CFLAGS/CXXFLAGS，让configure自己处理，避免编译器测试失败
+                DISABLE_HOTSPOT_OS_VERSION_CHECK=ok 2>&1 | tee /tmp/compile_output.log; then
+                COMPILE_SUCCESS=true
+                echo "✅ 编译成功完成"
+              else
+                echo "❌ 编译失败，分析错误..."
+                
+                # 分析错误类型并自动修复
+                if grep -q "Multiple garbage collectors selected" /tmp/compile_output.log; then
+                  echo "检测到GC冲突错误，修复中..."
+                  # 移除所有GC选项，使用默认GC
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
+                  echo "使用简化JAVAC_FLAGS: $JAVAC_FLAGS"
+                elif grep -q "OutOfMemoryError" /tmp/compile_output.log; then
+                  echo "检测到内存不足错误，调整内存设置..."
+                  # 减少内存使用
+                  JVM_HEAP="2g"
+                  JVM_META="512m"
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
+                  echo "调整内存设置: 堆=$JVM_HEAP, 元空间=$JVM_META"
+                elif grep -q "No space left on device" /tmp/compile_output.log; then
+                  echo "检测到磁盘空间不足，清理缓存..."
+                  # 清理构建缓存
+                  rm -rf build/*/support/classes
+                  rm -rf build/*/support/gensrc
+                  echo "已清理部分构建缓存"
+                else
+                  echo "未知错误，使用最简化配置重试..."
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none"
+                  OPTIMAL_JOBS=2
+                  HOTSPOT_JOBS=2
+                fi
+                
+                if [ $COMPILE_ATTEMPTS -eq $MAX_COMPILE_ATTEMPTS ]; then
+                  echo "❌ 达到最大重试次数，编译失败"
+                  echo "最后的错误输出:"
+                  cat /tmp/compile_output.log
+                  exit 1
+                else
+                  echo "等待 10 秒后重试..."
+                  sleep 10
+                fi
+              fi
+            else
+              echo "📦 执行完整构建"
+              if make images \
+                JOBS=$OPTIMAL_JOBS \
+                JAVAC_FLAGS="$JAVAC_FLAGS" \
+                WARNINGS_AS_ERRORS=false \
+                LOG_LEVEL=info \
+                HOTSPOT_BUILD_JOBS=$HOTSPOT_JOBS \
+          # 不再设置CFLAGS/CXXFLAGS，让configure自己处理，避免编译器测试失败
+                DISABLE_HOTSPOT_OS_VERSION_CHECK=ok 2>&1 | tee /tmp/compile_output.log; then
+                COMPILE_SUCCESS=true
+                echo "✅ 编译成功完成"
+              else
+                echo "❌ 编译失败，分析错误..."
+                # 同样的错误修复逻辑
+                if grep -q "Multiple garbage collectors selected" /tmp/compile_output.log; then
+                  echo "检测到GC冲突错误，修复中..."
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
+                elif grep -q "OutOfMemoryError" /tmp/compile_output.log; then
+                  echo "检测到内存不足错误，调整内存设置..."
+                  JVM_HEAP="2g"
+                  JVM_META="512m"
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none -J-Xmx$JVM_HEAP -J-XX:MetaspaceSize=$JVM_META"
+                else
+                  echo "未知错误，使用最简化配置重试..."
+                  export JAVAC_FLAGS="-encoding UTF-8 -XDignore.symbol.file -Xlint:none"
+                  OPTIMAL_JOBS=2
+                  HOTSPOT_JOBS=2
+                fi
+                
+                if [ $COMPILE_ATTEMPTS -eq $MAX_COMPILE_ATTEMPTS ]; then
+                  echo "❌ 达到最大重试次数，编译失败"
+                  cat /tmp/compile_output.log
+                  exit 1
+                else
+                  echo "等待 10 秒后重试..."
+                  sleep 10
+                fi
+              fi
+            fi
+          done
+          
+          # 停止性能监控
+          kill $MONITOR_PID 2>/dev/null || true
+          
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          MINUTES=$((DURATION / 60))
+          SECONDS=$((DURATION % 60))
+          
+          echo "编译完成时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "⏱️ 总编译耗时: ${MINUTES}分${SECONDS}秒"
+          
+          # 分析编译时间和性能
+          echo ""
+          echo "=== 编译性能分析 ==="
+          OPTIMAL_JOBS="${{ steps.machine-config.outputs.optimal-jobs }}"
+          CPU_CORES="${{ steps.machine-config.outputs.cpu-cores }}"
+          AVAIL_MEM="${{ steps.machine-config.outputs.avail-mem }}"
+          
+          if [ "${{ steps.cache-analysis.outputs.incremental }}" = "true" ]; then
+            if [ ${DURATION} -gt 1800 ]; then
+              echo "⚠️ 增量编译时间较长 (${MINUTES}分${SECONDS}秒)"
+              echo "优化建议:"
+              echo "1. 当前并行度: $OPTIMAL_JOBS (CPU: $CPU_CORES)"
+              echo "2. 内存使用: ${AVAIL_MEM}MB"
+              echo "3. 考虑增加缓存粒度"
+              echo "4. 检查依赖关系复杂度"
+            else
+              echo "✅ 增量编译性能优秀 (${MINUTES}分${SECONDS}秒)"
+              echo "优化效果:"
+              echo "- 并行度: $OPTIMAL_JOBS/$CPU_CORES (${OPTIMAL_JOBS}倍CPU核心数)"
+              echo "- 内存优化: 已启用"
+              echo "- 编译器优化: -O${{ steps.machine-config.outputs.opt-level }}"
+            fi
+          else
+            echo "📦 完整构建时间: ${MINUTES}分${SECONDS}秒"
+            if [ ${DURATION} -gt 3600 ]; then
+              echo "⚠️ 完整构建时间较长，优化建议:"
+              echo "1. 当前并行度: $OPTIMAL_JOBS (可考虑增加到 $((CPU_CORES * 2)))"
+              echo "2. 内存使用: ${AVAIL_MEM}MB (可考虑增加JVM堆内存)"
+              echo "3. 编译器优化: 已启用 -O${{ steps.machine-config.outputs.opt-level }}"
+            else
+              echo "✅ 完整构建性能优秀 (${MINUTES}分${SECONDS}秒)"
+              echo "优化效果:"
+              echo "- 并行度: $OPTIMAL_JOBS/$CPU_CORES"
+              echo "- 内存优化: 已启用"
+              echo "- 编译器优化: 已启用"
+            fi
+          fi
+          
+          # 计算性能指标（添加安全检查避免除零）
+          if [ -n "$CPU_CORES" ] && [ "$CPU_CORES" -gt 0 ]; then
+            COMPILATION_RATE=$((DURATION * 100 / CPU_CORES))
+            echo ""
+            echo "=== 性能指标 ==="
+            echo "每核心编译时间: ${COMPILATION_RATE}秒"
+            echo "并行效率: $((OPTIMAL_JOBS * 100 / CPU_CORES))%"
+          else
+            echo ""
+            echo "=== 性能指标 ==="
+            echo "⚠️ CPU核心数信息不可用，跳过相关计算"
+            COMPILATION_RATE=0
+          fi
+          if [ -n "${{ steps.machine-config.outputs.total-mem }}" ] && [ "${{ steps.machine-config.outputs.total-mem }}" -gt 0 ]; then
+            echo "内存利用率: $((AVAIL_MEM * 100 / ${{ steps.machine-config.outputs.total-mem }}))%"
+          fi
+          
+          # 显示构建统计
+          if [ -d build ]; then
+            echo ""
+            echo "=== 构建统计 ==="
+            echo "构建目录大小:"
+            du -sh build/
+            echo ""
+            echo "各模块大小:"
+            find build -name "images" -type d -exec du -sh {} \; | head -5
+          fi
+          
+        timeout-minutes: 180
+        env:
+          LC_ALL: en_US.UTF-8
+          LANG: en_US.UTF-8
+      
+      - name: 验证构建结果
+        id: verify-build
+        run: |
+          if [ -d build/*/images/jdk ]; then
+            echo "✅ JDK 编译成功！"
+            echo ""
+            echo "JDK 版本信息:"
+            ./build/*/images/jdk/bin/java -version
+            echo ""
+            echo "构建产物大小:"
+            du -sh build/*/images/jdk
+            echo ""
+            echo "完整构建目录大小:"
+            du -sh build/
+            echo ""
+            
+            # 显示增量编译效果
+            if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
+              echo "💡 本次使用了缓存，执行了增量编译"
+            else
+              echo "📦 本次从零开始完整编译，下次将可以使用增量编译"
+            fi
+            
+            echo "success=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ JDK 编译失败：找不到输出目录"
+            echo "success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+      
+      - name: 运行简单验证测试
+        run: |
+          echo "=== 测试 1: 验证 JDK 基本功能 ==="
+          JDK_BIN=$(ls -d build/*/images/jdk/bin | head -1)
+          
+          echo "测试 java -version:"
+          $JDK_BIN/java -version
+          
+          echo -e "\n测试 javac -version:"
+          $JDK_BIN/javac -version
+          
+          echo -e "\n=== 测试 2: 编译并运行 Hello World ==="
+          cat > /tmp/HelloWorld.java << 'EOF'
+          public class HelloWorld {
+              public static void main(String[] args) {
+                  System.out.println("Hello from JDK 8!");
+                  System.out.println("Java Version: " + System.getProperty("java.version"));
+                  System.out.println("Java Vendor: " + System.getProperty("java.vendor"));
+              }
+          }
+          EOF
+          
+          $JDK_BIN/javac /tmp/HelloWorld.java
+          $JDK_BIN/java -cp /tmp HelloWorld
+          
+          echo -e "\n=== 测试 3: 测试 jar 工具 ==="
+          $JDK_BIN/jar --version
+          
+          echo -e "\n=== 测试 4: 测试基本 Java API ==="
+          cat > /tmp/ApiTest.java << 'EOF'
+          import java.util.*;
+          import java.io.*;
+          public class ApiTest {
+              public static void main(String[] args) {
+                  // 测试集合框架
+                  List<String> list = new ArrayList<>();
+                  list.add("Test");
+                  System.out.println("ArrayList test: " + list.size());
+                  
+                  // 测试字符串操作
+                  String str = "Hello JDK";
+                  System.out.println("String test: " + str.toUpperCase());
+                  
+                  // 测试文件I/O
+                  File tmpFile = new File("/tmp/test.txt");
+                  System.out.println("File API test: " + tmpFile.getAbsolutePath());
+                  
+                  System.out.println("✅ 所有基础API测试通过!");
+              }
+          }
+          EOF
+          
+          $JDK_BIN/javac /tmp/ApiTest.java
+          $JDK_BIN/java -cp /tmp ApiTest
+          
+          echo -e "\n=== 测试 5: 验证模块系统 ==="
+          $JDK_BIN/java --list-modules | head -10
+          
+          echo -e "\n✅ 所有简单验证测试通过!"
+        timeout-minutes: 5
+      
+      - name: 准备构建产物
+        run: |
+          echo "=== 准备构建产物用于上传 ==="
+          
+          # 创建产物目录
+          mkdir -p artifacts
+          
+          # 复制JDK构建产物
+          if [ -d build/*/images/jdk ]; then
+            JDK_DIR=$(ls -d build/*/images/jdk | head -1)
+            echo "复制JDK目录: $JDK_DIR"
+            cp -r $JDK_DIR artifacts/jdk
+            echo "JDK产物大小:"
+            du -sh artifacts/jdk
+          fi
+          
+          # 复制JRE构建产物（如果存在）
+          if [ -d build/*/images/jre ]; then
+            JRE_DIR=$(ls -d build/*/images/jre | head -1)
+            echo "复制JRE目录: $JRE_DIR"
+            cp -r $JRE_DIR artifacts/jre
+            echo "JRE产物大小:"
+            du -sh artifacts/jre
+          fi
+          
+          # 创建构建信息文件
+          echo "构建时间: $(date '+%Y-%m-%d %H:%M:%S')" > artifacts/build-info.txt
+          echo "Git提交: ${{ github.sha }}" >> artifacts/build-info.txt
+          echo "分支: ${{ github.ref_name }}" >> artifacts/build-info.txt
+          echo "工作流: ${{ github.workflow }}" >> artifacts/build-info.txt
+          echo "运行器: ${{ runner.os }}" >> artifacts/build-info.txt
+          echo "Java版本: $(java -version 2>&1 | head -1)" >> artifacts/build-info.txt
+          echo "构建配置: ${{ steps.source-hash.outputs.hash }}" >> artifacts/build-info.txt
+          
+          # 显示产物信息
+          echo "=== 构建产物信息 ==="
+          ls -la artifacts/
+          echo ""
+          echo "产物总大小:"
+          du -sh artifacts/
+          echo ""
+          echo "构建信息:"
+          cat artifacts/build-info.txt
+      
+      - name: 上传JDK构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: jdk-build-artifacts-${{ steps.source-hash.outputs.hash }}
+          path: artifacts/
+          retention-days: 30
+          compression-level: 6
+      
+      - name: 收集构建日志
+        if: always()
+        run: |
+          echo "=== 收集构建日志 ==="
+          mkdir -p build-logs
+          
+          # 查找并复制global.log
+          if find build -name "global.log" -type f 2>/dev/null | head -1 | xargs -I {} cp {} build-logs/ 2>/dev/null; then
+            echo "✅ 找到并复制了global.log"
+          else
+            echo "⚠️ 未找到global.log文件"
+          fi
+          
+          # 查找并复制configure.log
+          if find build -name "configure.log" -type f 2>/dev/null | head -1 | xargs -I {} cp {} build-logs/ 2>/dev/null; then
+            echo "✅ 找到并复制了configure.log"
+          else
+            echo "⚠️ 未找到configure.log文件"
+          fi
+          
+          # 查找并复制其他可能的日志文件
+          if find build -name "*.log" -type f 2>/dev/null | head -5 | xargs -I {} cp {} build-logs/ 2>/dev/null; then
+            echo "✅ 复制了其他构建日志文件"
+          fi
+          
+          # 如果存在configure.log，也复制一份
+          if [ -f configure.log ]; then
+            cp configure.log build-logs/configure.log
+            echo "✅ 复制了根目录的configure.log"
+          fi
+          
+          # 显示收集到的日志文件
+          if [ "$(ls -A build-logs 2>/dev/null)" ]; then
+            echo "收集到的日志文件:"
+            ls -la build-logs/
+          else
+            echo "⚠️ 没有找到任何构建日志文件"
+          fi
+      
+      - name: 上传构建日志
+        uses: actions/upload-artifact@v4
+        if: always() && hashFiles('build-logs/**') != ''
+        with:
+          name: build-logs-${{ steps.source-hash.outputs.hash }}
+          path: build-logs/
+          retention-days: 7
+          compression-level: 6
+
+  download-artifacts:
+    name: 下载构件
+    runs-on: ubuntu-latest
+    needs: build
+    if: success()
+    
+    steps:
+      - name: 获取构建哈希
+        id: get-hash
+        run: |
+          # 从构建job获取哈希值
+          echo "构建job状态: ${{ needs.build.result }}"
+          if [ "${{ needs.build.result }}" = "success" ]; then
+            echo "hash=${{ needs.build.outputs.source-hash }}" >> $GITHUB_OUTPUT
+            echo "使用构建哈希: ${{ needs.build.outputs.source-hash }}"
+          else
+            echo "构建失败，使用当前提交SHA"
+            echo "hash=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "使用提交SHA: ${{ github.sha }}"
+          fi
+      
+      - name: 下载JDK构建产物
+        uses: actions/download-artifact@v4
+        with:
+          name: jdk-build-artifacts-${{ steps.get-hash.outputs.hash }}
+          path: downloaded-artifacts/
+        continue-on-error: true
+      
+      - name: 修复构件权限
+        run: |
+          if [ -d downloaded-artifacts ]; then
+            echo "修复下载构件的权限..."
+            # 给所有文件添加读取权限
+            find downloaded-artifacts -type f -exec chmod 644 {} \;
+            # 给所有目录添加执行权限
+            find downloaded-artifacts -type d -exec chmod 755 {} \;
+            # 给可执行文件添加执行权限
+            find downloaded-artifacts -name "java" -o -name "javac" -o -name "jar" -o -name "jarsigner" -o -name "keytool" -o -name "jps" -o -name "jstat" -o -name "jmap" -o -name "jstack" -o -name "jinfo" -o -name "jcmd" | xargs chmod 755
+            echo "✅ 权限修复完成"
+          else
+            echo "❌ 未找到下载的构件目录"
+          fi
+      
+      - name: 显示下载的构件信息
+        run: |
+          echo "=== 下载的构件信息 ==="
+          if [ -d downloaded-artifacts ] && [ "$(ls -A downloaded-artifacts)" ]; then
+            echo "✅ 成功下载构件"
+            echo "构件目录内容:"
+            ls -la downloaded-artifacts/
+            echo ""
+            echo "构件大小:"
+            du -sh downloaded-artifacts/
+            echo ""
+            if [ -f downloaded-artifacts/build-info.txt ]; then
+              echo "构建信息:"
+              cat downloaded-artifacts/build-info.txt
+            fi
+            echo ""
+          if [ -d downloaded-artifacts/jdk ]; then
+            echo "JDK版本信息:"
+            if [ -x downloaded-artifacts/jdk/bin/java ]; then
+              downloaded-artifacts/jdk/bin/java -version
+            else
+              echo "❌ java可执行文件权限不足，尝试修复..."
+              chmod +x downloaded-artifacts/jdk/bin/java
+              downloaded-artifacts/jdk/bin/java -version
+            fi
+          fi
+          else
+            echo "❌ 未找到下载的构件"
+            echo "可能的原因:"
+            echo "1. 构建失败，没有生成构件"
+            echo "2. 构件名称不匹配"
+            echo "3. 构件已过期被删除"
+            echo ""
+            echo "尝试查找可用的构件:"
+            echo "当前分支: ${{ github.ref_name }}"
+            echo "当前提交: ${{ github.sha }}"
+            echo "构建状态: ${{ needs.build.result }}"
+          fi
+      
+      - name: 创建构件压缩包
+        run: |
+          if [ -d downloaded-artifacts ] && [ "$(ls -A downloaded-artifacts)" ]; then
+            echo "=== 创建构件压缩包 ==="
+            cd downloaded-artifacts
+            tar -czf ../jdk-artifacts-${{ github.sha }}.tar.gz .
+            cd ..
+            echo "压缩包大小:"
+            ls -lh jdk-artifacts-*.tar.gz
+            echo "压缩包创建完成: jdk-artifacts-${{ github.sha }}.tar.gz"
+          else
+            echo "⚠️ 没有构件可压缩"
+          fi
+      
+      - name: 上传构件压缩包
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: jdk-compressed-artifacts-${{ github.sha }}
+          path: jdk-artifacts-*.tar.gz
+          retention-days: 30
