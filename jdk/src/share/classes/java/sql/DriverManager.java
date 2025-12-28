@@ -94,6 +94,7 @@ public class DriverManager {
 
 
     /**
+     * <p>加载初始化的 JDBC 驱动。</p>
      * Load the initial JDBC drivers by checking the System property
      * jdbc.properties and then use the {@code ServiceLoader} mechanism
      */
@@ -616,6 +617,8 @@ public class DriverManager {
         }
         String[] driversList = drivers.split(":");
         println("number of Drivers:" + driversList.length);
+
+        // 逐个加载驱动。
         for (String aDriver : driversList) {
             try {
                 println("DriverManager.Initialize: loading " + aDriver);
