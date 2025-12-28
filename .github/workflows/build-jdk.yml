@@ -211,7 +211,7 @@ jobs:
           unset CFLAGS CXXFLAGS LDFLAGS CPPFLAGS || true
           
           # 执行configure
-          bash configure --with-debug-level=release --disable-warnings-as-errors
+          bash configure --with-debug-level=release
           
           echo "configure-success=true" >> $GITHUB_OUTPUT
         env:
