@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'cursor/github-action-build-b4bc'  # 仅在当前分支触发
+      - 'my-debug_jdk8-b120'               # 基准分支
 
 jobs:
   build:
