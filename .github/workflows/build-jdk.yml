@@ -10,7 +10,7 @@ jobs:
     name: 编译 JDK
     runs-on: ubuntu-latest
     container:
-      image: openjdk:8
+      image: adoptopenjdk/openjdk8:x86_64-ubuntu-jdk8u292-b10
     outputs:
       source-hash: ${{ steps.source-hash.outputs.hash }}
       build-success: ${{ steps.verify-build.outputs.success }}
