@@ -223,13 +223,14 @@ jobs:
       
       - name: 显示配置信息
         run: |
-          if [ -f build/*/spec.gmk ]; then
+          SPEC_FILE=$(find build -name "spec.gmk" | head -1)
+          if [ -n "$SPEC_FILE" ]; then
             if [ "${{ steps.cache-build.outputs.cache-hit }}" = "true" ]; then
               echo "✅ 使用缓存的配置"
             else
               echo "✅ 配置成功完成"
             fi
-            cat build/*/spec.gmk | grep -E "CONF_NAME|JDK_VERSION|BOOT_JDK"
+            cat "$SPEC_FILE" | grep -E "CONF_NAME|JDK_VERSION|BOOT_JDK"
           else
             echo "❌ 配置失败"
             exit 1
