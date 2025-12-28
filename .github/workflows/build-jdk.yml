@@ -97,6 +97,7 @@ jobs:
             autoconf \
             zip \
             unzip \
+            cpio \
             file \
             libx11-dev \
             libxext-dev \
