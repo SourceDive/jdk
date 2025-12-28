@@ -1,0 +1,63 @@
+# macOS
+.DS_Store
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# NetBeans
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+
+# Build artifacts (General)
+build/
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# C/C++ artifacts
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.exe
+*.a
+*.lib
+
+# Autoconf / Configure
+config.log
+config.status
+autom4te.cache/
+
+# Logs and temporary files
+*.log
+*.swp
+*~
+*.bak
+*.rej
+*.orig
+
+# JTReg (Test results)
+JTwork/
+JTreport/
+
