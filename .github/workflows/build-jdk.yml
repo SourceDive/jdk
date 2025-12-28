@@ -1,4 +1,4 @@
-name: Build JDK
+name: Build JDK 8
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: 编译 JDK
+    name: 编译 JDK 8
     runs-on: ubuntu-latest
     container:
       image: adoptopenjdk/openjdk8:x86_64-ubuntu-jdk8u292-b10
@@ -608,7 +608,7 @@ jobs:
           cat > /tmp/HelloWorld.java << 'EOF'
           public class HelloWorld {
               public static void main(String[] args) {
-                  System.out.println("Hello from JDK 12!");
+                  System.out.println("Hello from JDK 8!");
                   System.out.println("Java Version: " + System.getProperty("java.version"));
                   System.out.println("Java Vendor: " + System.getProperty("java.vendor"));
               }
