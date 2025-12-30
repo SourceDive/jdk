@@ -28,6 +28,7 @@ package java.sql;
 import java.util.logging.Logger;
 
 /**
+ * <p>驱动。</p>
  * The interface that every driver class must implement.
  * <P>The Java SQL framework allows for multiple database drivers.
  *

@@ -41,6 +41,7 @@ import jdk.internal.reflect.Reflection;
 
 
 /**
+ * <p>驱动管理器。</p>
  * The basic service for managing a set of JDBC drivers.
  * <p>
  * <strong>NOTE:</strong> The {@link javax.sql.DataSource} interface, provides
