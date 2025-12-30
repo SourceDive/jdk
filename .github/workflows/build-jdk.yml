@@ -1,9 +1,11 @@
-name: Build JDK
+name: Build JDK 12 
 
 on:
   push:
     branches:
-      - '**'  # 在所有分支上触发
+      - 'my-debug_jdk-12-ga'  # 仅在当前分支触发
+      - 'cursor/github-action-build-b4bc'  # 仅在当前分支触发
+
 
 jobs:
   build:
