@@ -2535,6 +2535,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     public void execute(Runnable task) {
         if (task == null)
             throw new NullPointerException();
+
         ForkJoinTask<?> job;
         if (task instanceof ForkJoinTask<?>) // avoid re-wrap
             job = (ForkJoinTask<?>) task;
@@ -2556,6 +2557,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     public <T> ForkJoinTask<T> submit(ForkJoinTask<T> task) {
         if (task == null)
             throw new NullPointerException();
+
         externalPush(task);
         return task;
     }
