@@ -95,6 +95,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     private static final long serialVersionUID = -3223113410248163686L;
 
     /*
+    stack: 非公平模式，queue: 公平模式
      * This class implements extensions of the dual stack and dual
      * queue algorithms described in "Nonblocking Concurrent Objects
      * with Condition Synchronization", by W. N. Scherer III and
@@ -911,6 +912,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      */
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
+
         return transferer.transfer(e, true, 0) != null;
     }
 
