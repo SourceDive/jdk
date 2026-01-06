@@ -338,6 +338,7 @@ public class ScheduledThreadPoolExecutor
     private void delayedExecute(RunnableScheduledFuture<?> task) {
         if (isShutdown())
             reject(task);
+
         else {
             super.getQueue().add(task);
             if (!canRunInCurrentRunState(task) && remove(task))
@@ -555,6 +556,7 @@ public class ScheduledThreadPoolExecutor
                                        TimeUnit unit) {
         if (command == null || unit == null)
             throw new NullPointerException();
+
         RunnableScheduledFuture<Void> t = decorateTask(command,
             new ScheduledFutureTask<Void>(command, null,
                                           triggerTime(delay, unit),
