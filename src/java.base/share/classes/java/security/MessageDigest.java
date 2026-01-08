@@ -36,6 +36,9 @@ import sun.security.util.MessageDigestSpi2;
 import javax.crypto.SecretKey;
 
 /**
+ * <p>消息摘要。</p>
+ * <p>也可以叫作哈希值。</p>
+ * <p>数据的数字指纹。</p>
  * This MessageDigest class provides applications the functionality of a
  * message digest algorithm, such as SHA-1 or SHA-256.
  * Message digests are secure one-way hash functions that take arbitrary-sized
