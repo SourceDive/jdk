@@ -55,6 +55,7 @@ import java.util.function.Consumer;
  * inconsistent with {@code equals}; it just fails to obey the general contract
  * of the {@code Map} interface.
  *
+ * <p>注意这个实现并不是同步的。</p>
  * <p><strong>Note that this implementation is not synchronized.</strong>
  * If multiple threads access a map concurrently, and at least one of the
  * threads modifies the map structurally, it <em>must</em> be synchronized

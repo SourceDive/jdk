@@ -265,9 +265,10 @@ public class ReentrantReadWriteLock
         static final int MAX_COUNT      = (1 << SHARED_SHIFT) - 1;
         static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
 
-        /** 共享数量 Returns the number of shared holds represented in count. */
+        /** 读锁重入次数 Returns the number of shared holds represented in count. */
         static int sharedCount(int c)    { return c >>> SHARED_SHIFT; }
-        /** Returns the number of exclusive holds represented in count. */
+        /** 写锁重入次数 Returns the number of exclusive holds represented in count
+         * . */
         static int exclusiveCount(int c) { return c & EXCLUSIVE_MASK; }
 
         /**
@@ -378,6 +379,9 @@ public class ReentrantReadWriteLock
             return free;
         }
 
+        /**
+         * 获取写锁。
+         */
         @ReservedStackAccess
         protected final boolean tryAcquire(int acquires) {
             /*
@@ -393,17 +397,25 @@ public class ReentrantReadWriteLock
              */
             Thread current = Thread.currentThread();
             int c = getState();
+
+            // 获取写锁重入次数
             int w = exclusiveCount(c);
+
             if (c != 0) {
+                // 现在持有读锁，不允许获取写锁
                 // (Note: if c != 0 and w == 0 then shared count != 0)
                 if (w == 0 || current != getExclusiveOwnerThread())
                     return false;
+
                 if (w + exclusiveCount(acquires) > MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
+
+                // 已经获取写锁，再次获取。
                 // Reentrant acquire
                 setState(c + acquires);
                 return true;
             }
+
             if (writerShouldBlock() ||
                 !compareAndSetState(c, c + acquires))
                 return false;
@@ -411,6 +423,9 @@ public class ReentrantReadWriteLock
             return true;
         }
 
+        /**
+         * 获取读锁。
+         */
         @ReservedStackAccess
         protected final boolean tryReleaseShared(int unused) {
             Thread current = Thread.currentThread();
