@@ -50,7 +50,8 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.xml.PropertiesDefaultHandler;
 
-/**
+/*
+ * <p>线程安全的类</p>
  * The {@code Properties} class represents a persistent set of
  * properties. The {@code Properties} can be saved to a stream
  * or loaded from a stream. Each key and its corresponding value in
