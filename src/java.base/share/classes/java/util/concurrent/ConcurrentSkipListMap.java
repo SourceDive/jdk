@@ -595,6 +595,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     private V doPut(K key, V value, boolean onlyIfAbsent) {
         if (key == null)
             throw new NullPointerException();
+
         Comparator<? super K> cmp = comparator;
         for (;;) {
             Index<K,V> h; Node<K,V> b;
@@ -1342,6 +1343,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     public V put(K key, V value) {
         if (value == null)
             throw new NullPointerException();
+
         return doPut(key, value, false);
     }
 

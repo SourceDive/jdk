@@ -1787,6 +1787,7 @@ public final class System {
 
     /**
      * <p>触发垃圾回收。</p>
+     * <p>建议进行回收，不会立即执行。</p>
      * Runs the garbage collector.
      *
      * Calling the {@code gc} method suggests that the Java Virtual
